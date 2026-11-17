@@ -139,11 +139,18 @@ Governança:
 
 ## Prova de conceito
 
-Este repositório implementa essa arquitetura como um **monorepo Laravel**:
+Este repositório implementa essa arquitetura como um **monorepo** conteinerizado com Laravel Sail:
 
 - `packages/risk-engine` — motor de risco puro em PHP (pipeline, regras eliminatórias, score),
   independente de framework e testado com um LLM falso;
-- `apps/api` — aplicação Laravel com API REST, comando Artisan, persistência e o adaptador para o
-  Claude (Anthropic PHP SDK), além de um driver `fake` para rodar a demonstração sem chave de API.
+- `apps/api` — Laravel 13 organizado em módulos (Fornecedores, Documentos, IA, Auditoria, Avaliacao),
+  com MySQL (dados relacionais), Redis (fila das avaliações) e MongoDB (texto dos documentos e
+  auditoria das chamadas ao LLM), adaptador do Claude (Anthropic PHP SDK) e um driver heurístico
+  para rodar a demonstração sem chave de API;
+- `apps/web` — Vue 3 + Vite + TypeScript para cadastrar fornecedores, anexar documentos, acompanhar
+  a avaliação e registrar a decisão do comitê.
+
+Testes: unitários (motor, módulos e componentes Vue) e de integração (API + MySQL + Redis + MongoDB
+reais nos containers).
 
 Veja o [README](README.md) para executar.
