@@ -1,112 +1,205 @@
-# Avaliação de Risco de Fornecedores com LLM — Prova de Conceito
+# Avaliação de Risco de Fornecedores com LLM
 
-Monorepo que implementa a resposta da [Questão 6](RESPOSTA.md): usar um LLM para **resumir documentos**
-de uma construtora e classificar o **risco de contratação** em **BAIXO, MÉDIO ou ELEVADO**, com regras
-determinísticas, evidência verificada e revisão humana.
+Prova de conceito que usa um LLM para **resumir os documentos de uma construtora** e classificar o
+**risco de contratação** em **BAIXO, MÉDIO ou ELEVADO**, com evidência verificada, regras
+determinísticas e revisão humana.
 
-```
-.
-├── RESPOSTA.md                 # resposta escrita da questão
-├── packages/risk-engine/       # motor de risco em PHP puro (sem framework)
-├── apps/api/                   # Laravel 13 + Sail (MySQL, Redis, MongoDB), modular
-│   └── modules/
-│       ├── Fornecedores/       # cadastro e validação de CNPJ
-│       ├── Documentos/         # metadados no MySQL, texto bruto no MongoDB
-│       ├── IA/                 # adaptador do Claude + driver heurístico offline
-│       ├── Auditoria/          # log de toda chamada ao LLM no MongoDB
-│       └── Avaliacao/          # orquestra o pipeline em job na fila Redis
-└── apps/web/                   # Vue 3 + Vite + TypeScript (SPA)
-```
+> A resposta escrita da questão está em [RESPOSTA.md](RESPOSTA.md).
 
-## Arquitetura
-
-```
-Vue (5173) ──/api──► Laravel (8080) ──► MySQL   fornecedores, documentos, avaliações
-                         │                MongoDB texto dos documentos + auditoria do LLM
-                         └─ job ─► Redis ─► worker "queue"
-                                              └─► risk-engine
-                                                    1. map: resumo + achados por documento (LLM, JSON Schema)
-                                                    2. evidência literal verificada em código
-                                                    3. eliminatórios (Lista Suja, CEIS/CNEP, falência…)
-                                                    4. reduce: nota 0–100 por dimensão (LLM)
-                                                    5. score ponderado + classificação (código)
-                                                    6. confiança e revisão humana obrigatória
-```
-
-| Container (Sail) | Papel |
+| Documento | Conteúdo |
 |---|---|
-| `laravel.test` | API REST (PHP 8.4) |
-| `queue` | worker `queue:work redis` que processa as avaliações |
-| `web` | Vite servindo o Vue, com proxy de `/api` para o Laravel |
-| `mysql` | dados relacionais |
-| `redis` | fila e cache |
-| `mongodb` | texto bruto dos documentos e auditoria (prompt, resposta, modelo, tokens) |
+| [docs/arquitetura.md](docs/arquitetura.md) | Como funciona: containers, módulos, pipeline, dados, fluxo, decisões |
+| [docs/api.md](docs/api.md) | Referência da API REST com exemplos |
+| [docs/operacao.md](docs/operacao.md) | Trocar o modelo de IA, GPU, testes, problemas comuns |
 
-## Como rodar
+## Em uma frase
 
-Pré-requisito: Docker (no WSL ou Docker Desktop com integração WSL).
+O LLM lê cada documento e extrai achados **com trecho literal**. O código confere se o trecho existe,
+aplica regras eliminatórias (Lista Suja, CEIS/CNEP, falência…) e calcula o nível de risco. O comitê
+decide.
+
+```
+Vue (5173) ─► Laravel API (8080) ─► MySQL · MongoDB
+                   └─ fila Redis ─► worker ─► risk-engine ─► LLM (heurístico | Llama local | Claude)
+```
+
+## Stack
+
+| Camada | Tecnologia |
+|---|---|
+| Motor de risco | PHP 8.2+ puro (`packages/risk-engine`) |
+| API | Laravel 13, módulos próprios, Laravel Sail |
+| Frontend | Vue 3, Vite, TypeScript |
+| Bancos | MySQL 8.4 (relacional), MongoDB (texto e auditoria), Redis (fila) |
+| IA | Heurístico offline · Llama 3.2 via Ollama · Claude via Anthropic PHP SDK |
+| Testes | PHPUnit (unitários e integração), Vitest |
+
+---
+
+## Como executar
+
+### 1. Pré-requisitos
+
+| Item | Observação |
+|---|---|
+| **Docker** com Compose v2 | No Windows: dentro do **WSL 2** (Docker Engine no Ubuntu ou Docker Desktop com integração WSL) |
+| **Git** | |
+| ~6 GB livres em disco | Imagens dos containers (+2 GB se usar o Llama) |
+
+Não é preciso ter PHP, Composer nem Node na máquina: tudo roda em containers.
+
+> **Windows:** execute todos os comandos **dentro do WSL** (terminal do Ubuntu) e mantenha o projeto no
+> sistema de arquivos do Linux (ex.: `~/projetos`), não em `/mnt/c`. Assim os volumes ficam rápidos.
+
+### 2. Clonar
 
 ```bash
-cd apps/api
-cp .env.example .env            # primeira vez
-composer install                # ou: docker run --rm -v "$PWD/../..:/app" -w /app/apps/api composer install
-./vendor/bin/sail up -d         # sobe api, queue, web, mysql, redis, mongodb
+git clone <url-do-repositorio> avaliacao-risco-fornecedores
+cd avaliacao-risco-fornecedores/apps/api
+```
+
+### 3. Instalar as dependências PHP (sem PHP local)
+
+O comando monta a **raiz do monorepo** porque a API usa o pacote `packages/risk-engine`:
+
+```bash
+docker run --rm -u "$(id -u):$(id -g)" \
+  -v "$(cd ../.. && pwd)":/app -w /app/apps/api \
+  composer:2 composer install --ignore-platform-reqs --no-interaction
+```
+
+Se você já tem PHP 8.3+ e Composer, basta `composer install --ignore-platform-req=ext-mongodb`.
+
+### 4. Configurar o ambiente
+
+```bash
+cp .env.example .env
+```
+
+Os padrões já funcionam. Principais variáveis:
+
+| Variável | Padrão | Para quê |
+|---|---|---|
+| `APP_PORT` | `8080` | Porta da API |
+| `WEB_PORT` | `5173` | Porta do frontend |
+| `FORWARD_DB_PORT` / `FORWARD_REDIS_PORT` / `FORWARD_MONGODB_PORT` | `3307` / `6380` / `27018` | Acesso aos bancos pelo host |
+| `IA_DRIVER` | `heuristico` | `heuristico`, `ollama` ou `anthropic` ([detalhes](docs/operacao.md#trocar-o-driver-de-ia)) |
+
+### 5. Subir os containers
+
+```bash
+./vendor/bin/sail up -d
+```
+
+Na primeira vez a imagem PHP é construída (alguns minutos) e o container `web` roda `npm install`
+sozinho. Acompanhe com `./vendor/bin/sail ps`.
+
+### 6. Gerar a chave e criar o banco com dados de demonstração
+
+```bash
 ./vendor/bin/sail artisan key:generate
 ./vendor/bin/sail artisan migrate --seed
 ```
 
-- Frontend: <http://localhost:5173>
-- API: <http://localhost:8080/api/fornecedores>
+O seed cria três construtoras **fictícias**:
 
-O seed cria 3 construtoras **fictícias**: uma de risco baixo, uma médio e uma elevado (consta na Lista Suja).
+| ID | Construtora | Resultado esperado (driver heurístico) |
+|---|---|---|
+| 1 | Horizonte Azul S.A. | **BAIXO**: todas as certidões negativas |
+| 2 | Pedra Firme Ltda. | **MÉDIO**: prejuízo, protestos, atraso de obra, passivo trabalhista |
+| 3 | Muralha Ltda. | **ELEVADO**: consta na Lista Suja (eliminatório), recuperação judicial |
 
-Avaliar pelo terminal (síncrono):
+### 7. Acessar
+
+| O quê | Endereço |
+|---|---|
+| **Aplicação** | <http://localhost:5173> |
+| API | <http://localhost:8080/api/fornecedores> |
+| Health check | <http://localhost:8080/up> |
+
+Roteiro de demonstração:
+
+1. Abra <http://localhost:5173> e entre em **Construtora Muralha Ltda.**
+2. Clique em **Avaliar risco**. A avaliação vai para a fila e a tela acompanha o processamento.
+3. Veja o parecer **ELEVADO**: o sinal eliminatório com a evidência literal, as notas por dimensão, os
+   documentos faltantes e o motivo de cada decisão.
+4. Registre a **decisão do comitê** e abra a **auditoria das chamadas ao LLM** (vinda do MongoDB).
+
+Pelo terminal, sem fila:
 
 ```bash
 ./vendor/bin/sail artisan risco:avaliar 3
 ```
 
-### Usando o Claude de verdade
+### 8. (Opcional) Usar um LLM de verdade
 
-Por padrão `IA_DRIVER=heuristico`: um "LLM" de palavras-chave que roda offline, sem custo, para demo e
-testes. Para usar o Claude, edite `apps/api/.env`:
+Por padrão roda o driver **heurístico**: offline, gratuito e determinístico, ideal para demo e testes.
 
-```dotenv
-IA_DRIVER=anthropic
-ANTHROPIC_API_KEY=sk-ant-...
-IA_MODELO=claude-opus-5-5
-IA_ESFORCO=high
+**Llama local e gratuito (Ollama):**
+
+```bash
+./vendor/bin/sail exec ollama ollama pull llama3.2:3b   # ~2 GB, uma vez só
+bash ../../scripts/avaliar-com-llama.sh                 # avalia as 3 construtoras com o Llama
 ```
 
-e reinicie o worker: `./vendor/bin/sail restart queue`.
+Para o botão da tela usar o Llama, defina `IA_DRIVER=ollama` no `.env` e rode
+`./vendor/bin/sail restart queue`. Tem GPU NVIDIA? Veja
+[GPU NVIDIA para o Ollama](docs/operacao.md#gpu-nvidia-para-o-ollama-wsl).
+
+**Claude (Anthropic):**
+
+```bash
+bash ../../scripts/configurar-claude.sh   # pede a chave sem exibi-la e reinicia o worker
+```
+
+### 9. Parar
+
+```bash
+./vendor/bin/sail down      # para os containers e mantém os dados
+./vendor/bin/sail down -v   # para e apaga bancos e modelo baixado
+```
+
+---
 
 ## Testes
 
-| Suíte | Onde | Comando |
-|---|---|---|
-| Unitários do motor | `packages/risk-engine/tests` | `cd packages/risk-engine && composer install && vendor/bin/phpunit` |
-| Unitários dos módulos | `apps/api/modules/*/Tests/Unit` | `./vendor/bin/sail artisan test --testsuite=Unit` |
-| Integração (HTTP + MySQL + Redis + MongoDB) | `apps/api/modules/*/Tests/Integration`, `apps/api/tests/Integration` | `./vendor/bin/sail artisan test --testsuite=Integration` |
-| Frontend (Vitest) | `apps/web/src/__tests__` | `./vendor/bin/sail exec web npm test` |
+Com os containers no ar, a partir da raiz do repositório:
 
-## API
+```bash
+bash scripts/testar-tudo.sh
+```
 
-| Método | Rota | Descrição |
+| Suíte | Testes | O que cobre |
 |---|---|---|
-| GET/POST | `/api/fornecedores` | lista / cadastra |
-| GET | `/api/fornecedores/{id}` | detalhe |
-| GET/POST | `/api/fornecedores/{id}/documentos` | lista / anexa (texto ou arquivo `.txt`) |
-| GET | `/api/documentos/tipos` | tipos aceitos, obrigatórios e validade |
-| GET/POST | `/api/fornecedores/{id}/avaliacoes` | histórico / solicita (202, vai para a fila) |
-| GET | `/api/avaliacoes/{id}` | parecer completo |
-| POST | `/api/avaliacoes/{id}/decisao` | decisão do comitê |
-| GET | `/api/avaliacoes/{id}/auditoria` | chamadas ao LLM (MongoDB) |
+| Motor de risco: unitários | 22 | Score, eliminatórios, evidência, confiança, prompt injection |
+| Módulos Laravel: unitários | 14 | CNPJ, auditoria, seleção de driver, cliente Ollama |
+| Integração: API + MySQL + Redis + MongoDB | 17 | Fluxo completo das 3 construtoras, fila, auditoria, 409/422, decisão |
+| Frontend: Vitest | 9 | Componentes, formatação, cliente da API |
+| Frontend: type-check + build | — | `vue-tsc` + `vite build` |
+
+Comandos por suíte em [docs/operacao.md](docs/operacao.md#testes).
+
+## Estrutura
+
+```
+.
+├── RESPOSTA.md              # resposta da questão
+├── docs/                    # arquitetura, API, operação
+├── scripts/                 # testes, Llama, Claude, GPU
+├── packages/risk-engine/    # motor de risco (PHP puro)
+└── apps/
+    ├── api/                 # Laravel 13 + Sail
+    │   └── modules/         # Fornecedores, Documentos, IA, Auditoria, Avaliacao
+    └── web/                 # Vue 3 + Vite + TypeScript
+```
 
 ## Limites da PoC
 
-- Sem autenticação/autorização (em produção: SSO e perfis analista × comitê).
-- Documentos entram como texto; extração de PDF/OCR e integração com fontes oficiais
-  (Receita, TST, MTE, CGU) ficam para a próxima etapa.
-- O driver heurístico só existe para demo e testes: não substitui o modelo.
-- Falta o conjunto de avaliação (evals) com empresas já classificadas por analistas para medir
-  a qualidade de prompts e modelos antes de usar em decisões reais.
+- Sem autenticação nem perfis de acesso.
+- Documentos entram como texto (`.txt` ou colado). Extração de PDF/OCR e integração com fontes oficiais
+  ficam para a próxima etapa.
+- O driver heurístico existe para demo e testes; não substitui um LLM.
+- Falta um conjunto de avaliação (evals) com empresas já classificadas por analistas para medir a
+  qualidade antes de usar em decisões reais.
+
+Próximos passos em [docs/arquitetura.md](docs/arquitetura.md#13-próximos-passos-para-produção).
