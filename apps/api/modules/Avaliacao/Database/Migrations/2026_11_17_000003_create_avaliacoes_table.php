@@ -21,7 +21,7 @@ return new class extends Migration
             $table->text('erro')->nullable();
 
             // Decisão humana (comitê de compliance)
-            $table->string('decisao', 20)->nullable();
+            $table->string('decisao', 30)->nullable();
             $table->string('decidido_por')->nullable();
             $table->text('justificativa_decisao')->nullable();
             $table->timestamp('decidido_em')->nullable();
