@@ -6,10 +6,12 @@ namespace Modules\IA\Providers;
 
 use Anthropic\Client;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use InvalidArgumentException;
 use Modules\Auditoria\Contracts\AuditoriaLlm;
 use Modules\IA\Clients\AnthropicLlmClient;
 use Modules\IA\Clients\AuditingLlmClient;
+use Modules\IA\Clients\OllamaLlmClient;
 use Modules\Shared\Providers\ModuleServiceProvider;
 use RiskEngine\Contracts\LlmClient;
 use RiskEngine\Support\HeuristicLlmClient;
@@ -31,6 +33,13 @@ final class IAServiceProvider extends ModuleServiceProvider
             $client = match ($driver) {
                 'heuristico' => new HeuristicLlmClient(),
                 'anthropic' => $this->anthropic(),
+                'ollama' => new OllamaLlmClient(
+                    $app->make(HttpFactory::class),
+                    config('ia.ollama.url'),
+                    config('ia.ollama.model'),
+                    config('ia.ollama.timeout'),
+                    config('ia.ollama.contexto'),
+                ),
                 default => throw new InvalidArgumentException("Driver de IA desconhecido: {$driver}"),
             };
 

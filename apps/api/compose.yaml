@@ -60,6 +60,16 @@ services:
             - sail
         depends_on:
             - laravel.test
+    # LLM local e gratuito (Llama via Ollama) para testes sem chave de API.
+    # Modelo: ./vendor/bin/sail exec ollama ollama pull llama3.2:3b
+    ollama:
+        image: 'ollama/ollama:0.6.8'
+        ports:
+            - '${FORWARD_OLLAMA_PORT:-11434}:11434'
+        volumes:
+            - 'sail-ollama:/root/.ollama'
+        networks:
+            - sail
     mysql:
         image: 'mysql:8.4'
         ports:
@@ -123,4 +133,6 @@ volumes:
     sail-mongodb:
         driver: local
     sail-mongodb-config:
+        driver: local
+    sail-ollama:
         driver: local
