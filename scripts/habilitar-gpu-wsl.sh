@@ -34,5 +34,6 @@ grep -q '^COMPOSE_FILE=' .env \
   || printf '\n# GPU NVIDIA para o Ollama\nCOMPOSE_FILE=compose.yaml:compose.gpu.yaml\n' >> .env
 ./vendor/bin/sail up -d --force-recreate ollama
 ./vendor/bin/sail exec ollama nvidia-smi -L
+./vendor/bin/sail up -d
 
 echo "PRONTO: Ollama com GPU."
