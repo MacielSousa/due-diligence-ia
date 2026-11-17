@@ -60,7 +60,15 @@ final class DocumentAnalyzer
             $type = KnockOut::tryFrom((string) ($item['tipo'] ?? ''));
             $evidence = trim((string) ($item['evidencia'] ?? ''));
 
-            if (! $type || ! $this->verifier->exists($evidence, $document->content)) {
+            // Um eliminatório vira ELEVADO na hora, então exige mais que um achado comum:
+            // 1) evidência literal no documento; 2) do tipo de documento que pode comprová-lo;
+            // 3) a evidência precisa afirmar o fato, não negá-lo.
+            if (
+                ! $type
+                || ! $this->verifier->exists($evidence, $document->content)
+                || ! $type->acceptsFrom($document->type)
+                || $this->verifier->isNegation($evidence)
+            ) {
                 $discarded++;
                 continue;
             }

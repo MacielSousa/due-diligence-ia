@@ -27,6 +27,28 @@ enum KnockOut: string
         };
     }
 
+    /**
+     * Tipos de documento que podem comprovar este sinal. Um sinal eliminatório vindo de outro
+     * tipo de documento é rejeitado: ex. "Lista Suja" só vale da consulta à Lista Suja.
+     *
+     * @return list<DocumentType>
+     */
+    public function sourceTypes(): array
+    {
+        return match ($this) {
+            self::SlaveLabor => [DocumentType::SlaveLaborList],
+            self::Ineligible => [DocumentType::CeisCnep],
+            self::Bankruptcy => [DocumentType::FinancialStatement, DocumentType::Lawsuits, DocumentType::CnpjCard],
+            self::InactiveCnpj => [DocumentType::CnpjCard],
+            self::Corruption => [DocumentType::Lawsuits, DocumentType::CeisCnep],
+        };
+    }
+
+    public function acceptsFrom(DocumentType $type): bool
+    {
+        return in_array($type, $this->sourceTypes(), true);
+    }
+
     /** @return list<string> */
     public static function values(): array
     {
