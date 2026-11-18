@@ -7,6 +7,7 @@ acontece de ponta a ponta e por que as principais decisões foram tomadas.
 - [2. Estrutura do monorepo](#2-estrutura-do-monorepo)
 - [3. Containers](#3-containers)
 - [4. Motor de risco (`packages/risk-engine`)](#4-motor-de-risco-packagesrisk-engine)
+  - [4.6 Caso real: o teste com o Llama](#46-caso-real-o-teste-com-o-llama)
 - [5. API Laravel modular (`apps/api`)](#5-api-laravel-modular-appsapi)
 - [6. Frontend (`apps/web`)](#6-frontend-appsweb)
 - [7. Dados: o que fica em cada banco](#7-dados-o-que-fica-em-cada-banco)
@@ -165,6 +166,9 @@ flowchart TD
 Definidas em [`RiskScorer`](../packages/risk-engine/src/Scoring/RiskScorer.php), com parâmetros em
 [`modules/Avaliacao/config.php`](../apps/api/modules/Avaliacao/config.php):
 
+0. **Piso por severidade** ([`DimensionAssessor`](../packages/risk-engine/src/Pipeline/DimensionAssessor.php)):
+   a nota de uma dimensão nunca fica abaixo do pior achado validado nela. Achado **alto** garante nota
+   mínima **50**, e **crítico**, **80**. O ajuste aparece nos motivos do parecer.
 1. `score = Σ nota_dimensão × peso`
 2. `score < 35` → **BAIXO** · `35 ≤ score < 65` → **MÉDIO** · `score ≥ 65` → **ELEVADO**
 3. Qualquer dimensão com nota **≥ 80** → no mínimo **MÉDIO**: uma dimensão crítica não é diluída pelas outras
@@ -184,7 +188,11 @@ A confiança começa em 1,0 e cai por:
 | Dimensão que o modelo não avaliou (recebe nota neutra 50) | −0,10 cada |
 | Item descartado por evidência inexistente | −0,02 cada (máx. −0,20) |
 
-**Revisão humana obrigatória** quando o risco é MÉDIO/ELEVADO **ou** a confiança fica abaixo de 0,7.
+**Revisão humana obrigatória** quando:
+
+- o risco é MÉDIO ou ELEVADO; **ou**
+- a confiança fica abaixo de 0,7; **ou**
+- o modelo deixou alguma dimensão sem avaliar.
 
 Documentos obrigatórios e validade ([`DocumentType`](../packages/risk-engine/src/Enums/DocumentType.php)):
 
@@ -204,11 +212,52 @@ Documentos obrigatórios e validade ([`DocumentType`](../packages/risk-engine/sr
 | Risco | Defesa |
 |---|---|
 | Alucinação | Cada achado exige trecho literal; [`EvidenceVerifier`](../packages/risk-engine/src/Pipeline/EvidenceVerifier.php) confere no texto original |
+| Eliminatório falso (citação real, mas que nega o fato) | Sinal eliminatório exige mais que um achado comum: vir do tipo de documento que pode comprová-lo ([`KnockOut::sourceTypes()`](../packages/risk-engine/src/Enums/KnockOut.php)) e evidência que **afirme** o fato (`EvidenceVerifier::isNegation()` rejeita "não consta", "nada consta", "nenhum registro"…). Ver [4.6](#46-caso-real-o-teste-com-o-llama) |
 | Formato inválido | Saída com JSON Schema; valores fora dos enums são descartados |
 | Prompt injection | Documento delimitado por `<documento>`; delimitadores injetados são removidos; o prompt manda ignorar instruções no conteúdo |
 | IDs inventados na consolidação | Só IDs de achados existentes são aceitos |
-| Dimensão esquecida | Recebe nota neutra 50 e reduz a confiança |
+| Dimensão esquecida | Recebe nota neutra 50, reduz a confiança e exige revisão humana |
+| Consolidação que ignora achado grave | Piso de nota por severidade (alto ≥ 50, crítico ≥ 80) |
 | Recusa / resposta truncada | O adaptador lança `LlmException`; a avaliação vai para `falhou` (análise manual) |
+
+### 4.6 Caso real: o teste com o Llama
+
+As defesas de 4.5 nasceram de um teste com um LLM pequeno e real: `llama3.2:3b`, via Ollama, numa
+GTX 1650 de 4 GB. As três construtoras de demonstração foram avaliadas três vezes.
+
+| Construtora (esperado) | 1ª rodada | 2ª: eliminatório validado | 3ª: + piso por severidade |
+|---|---|---|---|
+| Horizonte Azul (BAIXO) | ELEVADO ❌ | BAIXO ✅ | **BAIXO** ✅ |
+| Pedra Firme (MÉDIO) | ELEVADO ❌ | BAIXO ❌, sem revisão | **MÉDIO** ✅, com revisão |
+| Muralha (ELEVADO) | ELEVADO ✅ | ELEVADO ✅ | **ELEVADO** ✅ |
+
+**Erro 1: eliminatório com evidência que nega o fato.** O modelo marcou "Consta na Lista Suja"
+nas duas construtoras limpas citando *"Resultado: não consta registro para o CNPJ consultado"*. O trecho
+existia, então a verificação de evidência aceitou, e o eliminatório levou as duas a ELEVADO.
+**Correção:** um eliminatório precisa vir do tipo de documento que pode comprová-lo e ter evidência
+afirmativa (`isNegation()`).
+
+**Erro 2: consolidação ignorando achados validados.** Na Pedra Firme, a etapa de leitura extraiu
+corretamente *"Prejuízo líquido de R$ 45 milhões"* (financeira, alta). A consolidação, porém, deu
+**10** para a dimensão financeira e não avaliou a técnica. O score ficou em 33,5, logo abaixo do limite
+de MÉDIO, e a confiança em 0,78. Resultado: BAIXO **sem revisão humana**. **Correção:** piso de nota por
+severidade e revisão obrigatória quando o modelo deixa dimensão sem avaliar.
+
+**Limite que continua:** o modelo pequeno **não detectou** a Lista Suja verdadeira da Muralha. Ela saiu
+ELEVADO pelas notas, não pelo eliminatório. Regra no código não resolve um caso que o modelo deixou de
+ver. Isso pede um modelo mais capaz (Claude), consulta direta à fonte oficial (o cadastro do MTE) e um
+conjunto de avaliação que meça o recall de casos ELEVADOS.
+
+**Lições:**
+
+1. Conferir se a citação **existe** não basta. Para decisões de alto impacto, é preciso conferir se ela
+   **sustenta** a afirmação.
+2. Etapas diferentes do mesmo modelo podem se contradizer. A saída de uma etapa deve servir de restrição
+   para a próxima.
+3. "Não pediu revisão humana" é o erro mais caro. As condições de revisão devem cobrir lacunas do
+   modelo, e não só o nível de risco.
+4. Testar com um modelo fraco é barato e expõe falhas que o driver heurístico nunca mostraria. Os testes
+   de regressão em `packages/risk-engine/tests` reproduzem as respostas reais do Llama.
 
 ## 5. API Laravel modular (`apps/api`)
 

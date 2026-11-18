@@ -171,7 +171,7 @@ bash scripts/testar-tudo.sh
 
 | Suíte | Testes | O que cobre |
 |---|---|---|
-| Motor de risco: unitários | 22 | Score, eliminatórios, evidência, confiança, prompt injection |
+| Motor de risco: unitários | 35 | Score, eliminatórios, evidência, negação, piso por severidade, confiança, prompt injection, regressões do Llama |
 | Módulos Laravel: unitários | 14 | CNPJ, auditoria, seleção de driver, cliente Ollama |
 | Integração: API + MySQL + Redis + MongoDB | 17 | Fluxo completo das 3 construtoras, fila, auditoria, 409/422, decisão |
 | Frontend: Vitest | 9 | Componentes, formatação, cliente da API |
