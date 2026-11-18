@@ -1,0 +1,122 @@
+{
+  "app": {
+    "titulo": "Due Diligence",
+    "subtitulo": "Third-party risk assessment",
+    "idioma": "Language"
+  },
+  "layout": {
+    "rodape": "Due Diligence challenge · Laravel 12 + Vue 3, Pinia, PrimeVue and Tailwind"
+  },
+  "nav": {
+    "relatorio": "Report",
+    "terceiros": "Third parties"
+  },
+  "comum": {
+    "salvar": "Save",
+    "cancelar": "Cancel",
+    "excluir": "Delete",
+    "editar": "Edit",
+    "adicionar": "Add",
+    "voltar": "Back",
+    "acoes": "Actions",
+    "todos": "All",
+    "sim": "Yes",
+    "nao": "No",
+    "confirmar": "Confirm",
+    "confirmarExclusao": "Delete \"{nome}\"? This action cannot be undone.",
+    "excluido": "Record deleted.",
+    "salvo": "Record saved.",
+    "erro": "Error",
+    "sucesso": "Success",
+    "nenhumRegistro": "No records found.",
+    "semConexao": "Could not reach the API. Is the backend running?"
+  },
+  "tipo": {
+    "pf": "Individual",
+    "pj": "Company"
+  },
+  "nivel": {
+    "BAIXO": "Low",
+    "MEDIO": "Medium",
+    "ALTO": "High",
+    "CRITICO": "Critical"
+  },
+  "terceiro": {
+    "titulo": "Third parties",
+    "descricao": "Individuals and companies assessed in the due diligence process.",
+    "novo": "New third party",
+    "detalhe": "Third party details",
+    "editar": "Edit third party",
+    "nome": "Name",
+    "documento": "Document",
+    "cpf": "CPF",
+    "cnpj": "CNPJ",
+    "tipo": "Type",
+    "pep": "PEP",
+    "pepLongo": "Politically exposed person (PEP)",
+    "buscar": "Search by name or document",
+    "naoEncontrado": "Third party not found."
+  },
+  "apontamento": {
+    "titulo": "Findings",
+    "tipo": "Type",
+    "ano": "Year",
+    "peso": "Weight",
+    "selecione": "Select the type",
+    "nenhum": "No findings.",
+    "sancao": "Sanction",
+    "processo_criminal": "Criminal case",
+    "midia_negativa": "Adverse media",
+    "processo_trabalhista": "Labor lawsuit"
+  },
+  "socio": {
+    "titulo": "Ownership structure",
+    "socio": "Partner",
+    "participacao": "Share",
+    "selecione": "Select the partner",
+    "nenhum": "No partners registered.",
+    "total": "Total: {total}%"
+  },
+  "risco": {
+    "titulo": "Risk",
+    "ano": "Reference year",
+    "calcular": "Calculate risk",
+    "score": "Score",
+    "nivel": "Level",
+    "naoCalculado": "Click \"Calculate risk\" to assess this third party."
+  },
+  "relatorio": {
+    "titulo": "Risk report",
+    "descricao": "Score of each third party, from highest to lowest risk.",
+    "atualizar": "Refresh"
+  },
+  "anexo": {
+    "titulo": "Documents",
+    "categoria": "Category",
+    "arquivo": "File",
+    "tamanho": "Size",
+    "enviadoEm": "Uploaded at",
+    "escolher": "Choose file",
+    "enviar": "Upload",
+    "baixar": "Download file",
+    "nenhum": "No documents attached.",
+    "dica": "PDF, JPG or PNG up to {max}.",
+    "muitoGrande": "The file exceeds the {max} limit.",
+    "categorias": {
+      "contrato_social": "Articles of incorporation",
+      "certidao_negativa": "Clearance certificate",
+      "documento_identidade": "ID document",
+      "comprovante_endereco": "Proof of address",
+      "outro": "Other"
+    }
+  },
+  "validacao": {
+    "cpfInvalido": "The CPF number is invalid.",
+    "cnpjInvalido": "The CNPJ number is invalid."
+  },
+  "primevue": {
+    "nenhumArquivo": "No file chosen",
+    "semResultados": "No results found",
+    "semOpcoes": "No available options"
+  }
+}
