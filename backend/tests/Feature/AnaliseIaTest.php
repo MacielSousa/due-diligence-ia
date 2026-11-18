@@ -153,6 +153,18 @@ class AnaliseIaTest extends TestCase
         $this->assertStringContainsString('OCR', $analise->documentos[0]->erro);
     }
 
+    public function test_command_ia_analisar_executa_na_hora_e_mostra_o_resultado(): void
+    {
+        $this->fakeOllama();
+        $this->anexar('consulta-sancoes.pdf');
+
+        $this->artisan('ia:analisar', ['terceiro' => $this->empresa->id, '--ano' => 2026, '--agora' => true])
+            ->expectsOutputToContain('Score 40.0 · MEDIO · recomendação: reprovar · ACHADO ELIMINATÓRIO')
+            ->assertSuccessful();
+
+        $this->artisan('ia:analisar', ['terceiro' => 999])->assertFailed();
+    }
+
     public function test_sem_documentos_retorna_422(): void
     {
         $this->postJson("/api/terceiros/{$this->empresa->id}/analises-ia")

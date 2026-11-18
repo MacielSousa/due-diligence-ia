@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <title>Fluxo da análise de documentos por IA</title>
+  <desc>Animação em loop: usuário dispara a análise, API responde 202, job entra na fila, Job 1 extrai o texto, a Llama lê e o código valida, Job 2 calcula o score, a tela mostra o resultado.</desc>
+
+  <defs>
+    <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+    <filter id="sombra" x="-10%" y="-10%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <style>
+      .caixa { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; }
+      .titulo { font-size: 15px; font-weight: 700; fill: #0f172a; }
+      .sub { font-size: 11.5px; fill: #475569; }
+      .num { font-size: 12px; font-weight: 700; fill: #ffffff; }
+      .linha { fill: none; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 6 5; }
+      .legenda { font-size: 16px; font-weight: 600; fill: #065f46; }
+      .rotulo { font-size: 11px; fill: #64748b; font-style: italic; }
+    </style>
+  </defs>
+
+  <!-- fundo (legível no tema claro e no escuro) -->
+  <rect width="960" height="470" rx="14" fill="#f8fafc"/>
+  <text x="30" y="34" font-size="18" font-weight="700" fill="#0f172a">Análise de documentos por IA — fluxo em alto nível</text>
+  <text x="30" y="54" font-size="12" fill="#64748b">A IA sugere, o código decide · tudo assíncrono (fila) · a tela acompanha a cada 2 s</text>
+
+  <!-- conexões -->
+  <path class="linha" d="M210,122 L280,122" marker-end="url(#seta)"/>
+  <path class="linha" d="M450,122 L520,122" marker-end="url(#seta)"/>
+  <path class="linha" d="M690,122 L760,122" marker-end="url(#seta)"/>
+  <path class="linha" d="M845,164 L845,280" marker-end="url(#seta)"/>
+  <path class="linha" d="M760,322 L570,322" marker-end="url(#seta)"/>
+  <path class="linha" d="M400,322 L210,322" marker-end="url(#seta)"/>
+  <path class="linha" d="M125,280 L125,164" marker-end="url(#seta)"/>
+  <text class="rotulo" x="227" y="114">POST</text>
+  <text class="rotulo" x="470" y="114">dispatch</text>
+  <text class="rotulo" x="702" y="114">worker</text>
+  <text class="rotulo" x="853" y="226">texto</text>
+  <text class="rotulo" x="608" y="314">achados validados</text>
+  <text class="rotulo" x="252" y="314">score + métricas</text>
+  <text class="rotulo" x="133" y="226">GET a cada 2 s</text>
+
+  <!-- 1. tela -->
+  <g filter="url(#sombra)">
+    <rect class="caixa" x="40" y="80" width="170" height="84" rx="10"/>
+    <rect x="40" y="80" width="170" height="84" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="2.5" opacity="0">
+      <animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="1;0;1" keyTimes="0;0.12;0.95"/>
+    </rect>
+  </g>
+  <circle cx="58" cy="98" r="11" fill="#10b981"/><text class="num" x="58" y="102" text-anchor="middle">1</text>
+  <text class="titulo" x="76" y="104">Tela (Vue)</text>
+  <text class="sub" x="56" y="128">anexa PDFs e clica em</text>
+  <text class="sub" x="56" y="144">"Analisar com IA" · Pinia</text>
+
+  <!-- 2. API -->
+  <g filter="url(#sombra)">
+    <rect class="caixa" x="280" y="80" width="170" height="84" rx="10"/>
+    <rect x="280" y="80" width="170" height="84" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="2.5" opacity="0">
+      <animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.12;0.25"/>
+    </rect>
+  </g>
+  <circle cx="298" cy="98" r="11" fill="#10b981"/><text class="num" x="298" y="102" text-anchor="middle">2</text>
+  <text class="titulo" x="316" y="104">API Laravel</text>
+  <text class="sub" x="296" y="128">cria a análise e</text>
+  <text class="sub" x="296" y="144">responde 202 na hora</text>
+
+  <!-- 3. fila -->
+  <g filter="url(#sombra)">
+    <rect class="caixa" x="520" y="80" width="170" height="84" rx="10"/>
+    <rect x="520" y="80" width="170" height="84" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="2.5" opacity="0">
+      <animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.25;0.38"/>
+    </rect>
+  </g>
+  <circle cx="538" cy="98" r="11" fill="#10b981"/><text class="num" x="538" y="102" text-anchor="middle">3</text>
+  <text class="titulo" x="556" y="104">Fila (jobs)</text>
+  <text class="sub" x="536" y="128">AnalisarDocumentosJob</text>
+  <text class="sub" x="536" y="144">espera o worker</text>
+
+  <!-- 4. job 1 -->
+  <g filter="url(#sombra)">
+    <rect class="caixa" x="760" y="80" width="170" height="84" rx="10"/>
+    <rect x="760" y="80" width="170" height="84" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="2.5" opacity="0">
+      <animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.38;0.5"/>
+    </rect>
+  </g>
+  <circle cx="778" cy="98" r="11" fill="#10b981"/><text class="num" x="778" y="102" text-anchor="middle">4</text>
+  <text class="titulo" x="796" y="104">Job 1</text>
+  <text class="sub" x="776" y="128">extrai o texto do PDF</text>
+  <text class="sub" x="776" y="144">e tira marca d'água</text>
+
+  <!-- 5. Llama -->
+  <g filter="url(#sombra)">
+    <rect class="caixa" x="740" y="280" width="190" height="84" rx="10"/>
+    <rect x="740" y="280" width="190" height="84" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="2.5" opacity="0">
+      <animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.5;0.69"/>
+    </rect>
+  </g>
+  <circle cx="758" cy="298" r="11" fill="#7c3aed"/><text class="num" x="758" y="302" text-anchor="middle">5</text>
+  <text class="titulo" x="776" y="304">Llama 3.2 3B</text>
+  <text class="sub" x="756" y="328">Ollama · GPU 4 GB → JSON</text>
+  <text class="sub" x="756" y="344">código confere cada trecho</text>
+
+  <!-- 6. job 2 -->
+  <g filter="url(#sombra)">
+    <rect class="caixa" x="400" y="280" width="170" height="84" rx="10"/>
+    <rect x="400" y="280" width="170" height="84" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="2.5" opacity="0">
+      <animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.69;0.89"/>
+    </rect>
+  </g>
+  <circle cx="418" cy="298" r="11" fill="#10b981"/><text class="num" x="418" y="302" text-anchor="middle">6</text>
+  <text class="titulo" x="436" y="304">Job 2</text>
+  <text class="sub" x="416" y="328">grava apontamentos e</text>
+  <text class="sub" x="416" y="344">calcula o score explicado</text>
+
+  <!-- 7. banco -->
+  <g filter="url(#sombra)">
+    <rect class="caixa" x="40" y="280" width="170" height="84" rx="10"/>
+    <rect x="40" y="280" width="170" height="84" rx="10" fill="#d1fae5" stroke="#10b981" stroke-width="2.5" opacity="0">
+      <animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.83;0.95"/>
+    </rect>
+  </g>
+  <circle cx="58" cy="298" r="11" fill="#10b981"/><text class="num" x="58" y="302" text-anchor="middle">7</text>
+  <text class="titulo" x="76" y="304">Banco</text>
+  <text class="sub" x="56" y="328">score, nível, recomendação,</text>
+  <text class="sub" x="56" y="344">métricas e evidências</text>
+
+  <!-- "documento" viajando pelo fluxo -->
+  <g>
+    <rect x="-12" y="-15" width="24" height="30" rx="3" fill="#ffffff" stroke="#0f766e" stroke-width="2"/>
+    <path d="M-6,-6 H6 M-6,0 H6 M-6,6 H2" stroke="#0f766e" stroke-width="2" stroke-linecap="round"/>
+    <animateMotion dur="16s" repeatCount="indefinite" calcMode="linear"
+      keyPoints="0;0.128;0.255;0.383;0.5;0.691;0.883;1"
+      keyTimes="0;0.12;0.25;0.38;0.5;0.69;0.89;1"
+      path="M125,122 L365,122 L605,122 L845,122 L845,322 L485,322 L125,322 L125,122"/>
+  </g>
+
+  <!-- legenda do passo atual -->
+  <rect x="30" y="398" width="900" height="52" rx="10" fill="#ecfdf5" stroke="#a7f3d0"/>
+  <g class="legenda" text-anchor="middle">
+    <text x="480" y="430" opacity="0"><animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="1;0" keyTimes="0;0.12"/>1 · O usuário anexa os PDFs do fornecedor e pede a análise</text>
+    <text x="480" y="430" opacity="0"><animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.12;0.25"/>2 · A API registra a análise e responde 202 — não espera a IA</text>
+    <text x="480" y="430" opacity="0"><animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.25;0.38"/>3 · O Job 1 entra na fila e o worker (queue:work) o executa</text>
+    <text x="480" y="430" opacity="0"><animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.38;0.5"/>4 · Para cada PDF: extrai o texto e limpa cabeçalho, rodapé e marca d'água</text>
+    <text x="480" y="430" opacity="0"><animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.5;0.69"/>5 · A Llama aponta os achados com o trecho; o código descarta o que não tiver prova</text>
+    <text x="480" y="430" opacity="0"><animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1;0" keyTimes="0;0.69;0.89"/>6 · O Job 2 transforma os achados em apontamentos e o domínio calcula o score</text>
+    <text x="480" y="430" opacity="0"><animate attributeName="opacity" dur="16s" repeatCount="indefinite" calcMode="discrete" values="0;1" keyTimes="0;0.89"/>7 · Tudo fica gravado; a tela mostra score, recomendação, métricas e o porquê</text>
+  </g>
+</svg>

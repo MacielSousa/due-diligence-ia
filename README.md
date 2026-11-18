@@ -1,185 +1,92 @@
-# Desafio Due Diligence
+# Due Diligence de Fornecedores — PoC com IA local
 
-Treino de live coding (tema: avaliação de risco de terceiros), separado em:
+Sistema para avaliar o **risco de contratar um fornecedor**: cadastra empresas e pessoas, o
+quadro societário e os documentos (contrato social, certidões, consultas de sanção, notícias).
+Uma **LLM local (Llama 3.2 3B)** lê os documentos e aponta os riscos com o trecho que os prova;
+o sistema confere cada achado e calcula um **score explicado peso a peso**, com a recomendação
+(aprovar, ressalvas, comitê ou reprovar).
 
-| Pasta | Stack |
-|---|---|
-| `backend/` | Laravel 12 — API REST (SQLite), respostas padronizadas e mensagens em pt-BR / en |
-| `frontend/` | Vue 3 + **TypeScript**, Vite, Vue Router, Pinia, PrimeVue 4, Tailwind CSS 3, vue-i18n |
+<p align="center">
+  <img src="docs/img/fluxo-analise.svg" alt="Fluxo da análise por IA" width="100%">
+</p>
 
-## O desafio
+## Partes do sistema
 
-O domínio está **implementado** em `backend/app/Domain/DueDiligence/`
-(`Documento`, `Apontamento`, `Terceiro`, `PessoaFisica`, `PessoaJuridica`, `AnalisadorDeRisco`).
+| Pasta | O que é | Guia |
+|---|---|---|
+| [`backend/`](backend) | API REST **Laravel 12** (SQLite, fila de jobs, domínio de risco em PHP puro) | [backend/README.md](backend/README.md) |
+| [`frontend/`](frontend) | **Vue 3 + TypeScript** (Vite, Router, Pinia, PrimeVue, Tailwind, i18n) | [frontend/README.md](frontend/README.md) |
+| [`ia/`](ia) | Modelo **due-diligence** do Ollama ([Modelfile](ia/Modelfile)) e pipeline de fine-tuning ([ia/treino](ia/treino)) | [docs/ia.md](docs/ia.md) |
+| [`docs/`](docs) | Como a IA funciona: capacidade da máquina, treino, fluxos, diagramas | [docs/ia.md](docs/ia.md) |
+| [`exemplos/`](exemplos) | Documentos **fictícios** da FM Soluções para testar a IA + script de avaliação | [ROTEIRO-LLM.md](exemplos/fm-solucoes/ROTEIRO-LLM.md) |
 
-```bash
-cd backend
-composer desafio        # roda o script do desafio (desafio.php)
-composer test:desafio   # 7 testes de aceitação do cálculo de risco
+```mermaid
+flowchart LR
+    U((Usuário)) --> F["Frontend<br/>Vue :5180"]
+    F -- "/api (proxy)" --> B["Backend<br/>Laravel :8000"]
+    B --> DB[("SQLite")]
+    B -- fila --> W["Worker<br/>queue:work"]
+    W -- "/api/generate" --> O["Ollama :11434<br/>due-diligence"]
+    O --- G[["GPU"]]
+    W --> DB
 ```
 
-**Quer treinar de novo?** O esqueleto vazio está em `backend/treino/` (veja o README de lá).
-Enquanto o domínio estiver incompleto, a API responde **501 `domain_incomplete`**.
+## Subir tudo
 
-> O backend é **só API**: não tem views nem Vite próprios. A interface é a pasta `frontend/`.
-
-## Validação de documentos
-
-CPF e CNPJ são validados pelos **dígitos verificadores** em três lugares, com o mesmo algoritmo:
-- `app/Domain/DueDiligence/Documento.php` — usado pelo domínio;
-- `app/Rules/CpfValido.php` e `CnpjValido.php` — Form Request da API (mensagem em pt-BR/en);
-- `frontend/src/utils/documento.ts` — avisa no formulário antes de enviar.
-
-## Documentos anexados
-
-Cada terceiro pode ter arquivos anexados (PDF, JPG, PNG até 2 MB), por categoria: contrato social,
-certidão negativa, documento de identidade, comprovante de endereço ou outro.
-Os arquivos ficam em `backend/storage/app/private/terceiros/{id}/anexos/` (fora da pasta pública)
-e são baixados pela API. Excluir o anexo ou o terceiro apaga também o arquivo.
-
-## Rodar o projeto (2 terminais no WSL)
+Pré-requisitos: PHP 8.2+, Composer, Node 18+, Docker com o Ollama (modelo `llama3.2:3b` baixado).
 
 ```bash
-# Terminal 1 — backend (http://localhost:8000)
-cd backend
-composer setup   # só na 1ª vez: instala, cria .env e o banco SQLite com os dados de exemplo
-composer dev     # = php artisan serve
+# 0. IA — uma vez: cria o modelo especializado no Ollama
+./ia/criar-modelo.sh
 ```
 
 ```bash
-# Terminal 2 — frontend (http://localhost:5180)
+# 1. Backend — terminal 1 (http://localhost:8000)
+cd backend
+composer setup   # só na 1ª vez: dependências, .env, banco SQLite e dados de exemplo
+composer dev
+```
+
+```bash
+# 2. Worker da fila — terminal 2 (executa a análise por IA)
+cd backend
+composer worker
+```
+
+```bash
+# 3. Frontend — terminal 3 (http://localhost:5180)
 cd frontend
 npm install      # só na 1ª vez
 npm run dev -- --port 5180
 ```
 
-O Vite repassa `/api/*` para o Laravel (proxy em `vite.config.ts`), então não há CORS.
+Abra **http://localhost:5180**. Para ver a IA trabalhando: Terceiros → *FM Soluções Tecnologicas*
+→ anexe os PDFs de [exemplos/fm-solucoes](exemplos/fm-solucoes) → **Analisar documentos com IA**.
 
-## Análise de documentos por IA (Llama local)
+Sem interface, pelo terminal: `cd backend && php artisan ia:analisar <id> --agora`.
 
-A Llama 3.2 3B (via **Ollama**) lê os documentos anexados e aponta os riscos; o sistema
-confere cada achado e calcula o score. Tudo roda em **fila**, em dois jobs:
+## Destaques
 
-```
-POST /analises-ia ──► AnalisarDocumentosJob (Job 1)              ──► RegistrarResultadoAnaliseJob (Job 2)
-  202 na hora          para cada PDF: extrai texto → limpa →          troca os apontamentos de origem "ia",
-                       Llama → travas do código → grava achados       calcula o score com o domínio (explicado
-                       e o tempo de cada documento                    peso a peso), nível, recomendação e métricas
-```
-
-- **Travas do código** (o modelo sugere, o sistema decide): tipo válido, trecho citado precisa
-  existir **literalmente** no documento, não pode vir de certidão negativa, ano precisa aparecer
-  no texto. Achado descartado fica registrado com o motivo.
-- **Eliminatório:** sanção vigente que impede licitar/contratar ⇒ recomendação **reprovar**,
-  independente do score.
-- **Métricas guardadas:** duração total, espera na fila, tempo e tokens por documento, achados
-  válidos/descartados, modelo usado e a resposta bruta do modelo (auditoria).
-- **"Por que esse score?":** peso de cada apontamento, depreciação por idade, adicional de PEP,
-  score de cada sócio × participação, soma e teto.
-
-**Rodar** (além do backend e do frontend):
-```bash
-cd backend && composer worker            # executa os jobs da fila
-./ia/criar-modelo.sh                     # cria o modelo "due-diligence" no Ollama (uma vez)
-```
-
-**Modelo** `due-diligence` (`ia/Modelfile`): `llama3.2:3b` + regras + exemplos resolvidos.
-Avaliação nos documentos fictícios de `exemplos/fm-solucoes/`:
-
-| Modelo | Acertos | Precisão | Cobertura |
-|---|---|---|---|
-| `llama3.2:3b` sem preparo | 1 de 4 | 100% | 25% |
-| `due-diligence` (Modelfile) | **4 de 4** | **100%** | **100%** |
-
-Fine-tuning (LoRA) em `ia/treino/`: `gerar_dataset.py` (600 exemplos sintéticos),
-`instalar.sh`, `treinar.py` (QLoRA para GPU de 4 GB) e `criar-modelo-ft.sh`.
-
-## Padrão de resposta da API
-
-Toda resposta segue o mesmo formato (`app/Http/Responses/ApiResponse.php`):
-
-```jsonc
-// sucesso
-{ "success": true, "message": "Terceiro cadastrado com sucesso.", "data": { ... }, "meta": { ... } }
-
-// erro
-{ "success": false, "message": "Os dados informados são inválidos.", "code": "validation_error",
-  "errors": { "nome": ["O campo nome é obrigatório."] }, "detail": "..." }
-```
-
-| `code` | HTTP | Quando |
-|---|---|---|
-| `validation_error` | 422 | Form Request falhou (vem com `errors` por campo) |
-| `business_rule` | 422 | Regra do domínio violada (CPF inválido, ciclo societário…) |
-| `not_found` | 404 | Recurso inexistente |
-| `method_not_allowed` | 405 | Método HTTP errado |
-| `domain_incomplete` | 501 | Classes do desafio incompletas (`detail` diz o que falta) |
-| `internal_error` | 500 | Erro inesperado (`detail` só com `APP_DEBUG=true`) |
-
-**Idioma:** o frontend envia `Accept-Language` (idioma escolhido na tela) e o middleware
-`DefinirIdioma` faz o Laravel responder no mesmo idioma — inclusive as mensagens de validação
-(`lang/pt_BR`, `lang/en`).
-
-## Endpoints
-
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/api/terceiros?busca=&tipo=pf\|pj` | Lista |
-| POST | `/api/terceiros` | Cria (`tipo`, `nome`, `documento`, `pep`) |
-| GET | `/api/terceiros/{id}` | Detalhe com apontamentos e sócios |
-| PUT | `/api/terceiros/{id}` | Atualiza (`nome`, `documento`, `pep`) |
-| DELETE | `/api/terceiros/{id}` | Exclui (cascata) |
-| POST | `/api/terceiros/{id}/apontamentos` | `tipo`, `ano` |
-| DELETE | `/api/terceiros/{id}/apontamentos/{apontamentoId}` | |
-| POST | `/api/terceiros/{id}/socios` | `socio_id`, `participacao` (só PJ, soma ≤ 100) |
-| DELETE | `/api/terceiros/{id}/socios/{socioId}` | |
-| GET | `/api/terceiros/{id}/anexos` | Lista os documentos anexados |
-| POST | `/api/terceiros/{id}/anexos` | Upload multipart: `categoria`, `arquivo` |
-| GET | `/api/terceiros/{id}/anexos/{anexoId}/download` | Baixa o arquivo |
-| DELETE | `/api/terceiros/{id}/anexos/{anexoId}` | Remove o anexo e o arquivo |
-| GET | `/api/terceiros/{id}/risco?ano=2026` | Score + nível (usa o domínio) |
-| GET | `/api/relatorio-risco?ano=2026` | Ranking de todos (`meta.ano`) |
-
-## Frontend: uma responsabilidade por camada
-
-```
-componente/página ──> store (Pinia) ──> service ──> useApi ──> fetch
-       │                 estado          endpoints     HTTP, idioma, formato padrão, ApiError
-       └── useNotificacao().executar(): toast com a `message` da API + erros nos campos
-```
-
-```
-frontend/src/
-  types/          api.ts (ApiSucesso, ApiFalha, ErrorCode), terceiro.ts, risco.ts, router.d.ts
-  composables/    useApi.ts (conector HTTP + ApiError), useNotificacao.ts (padrão de mensagens)
-  services/       terceirosService.ts, riscoService.ts  (quais endpoints + tipo do retorno)
-  stores/         app.ts (idioma), terceiros.ts, risco.ts  (estado)
-  layouts/        DefaultLayout.vue  (header + <RouterView/> + footer)
-  pages/          RelatorioPage, TerceirosPage, TerceiroDetalhePage
-  components/
-    layout/       AppHeader, AppNav (menu gerado pelas rotas), LanguageSwitcher, AppFooter
-    ui/           PageHeader, SectionCard, ApiErrorMessage, CampoErro
-    terceiros/    TerceiroDialog, ApontamentosCard, SociosCard
-    risco/        RiscoCard, ResumoNiveis, NivelTag
-  i18n/           pt-BR.json, en.json
-  router/         rotas filhas do DefaultLayout (meta: titulo, menu, icone, menuPai)
-```
-
-Regras do padrão de mensagens:
-- **Ação** (salvar, excluir, adicionar) → `notificacao.executar(() => store.acao(), { erros })`:
-  toast de sucesso com a `message` do backend; em erro, toast + `errors` nos campos (`<CampoErro>`).
-- **Carregamento** (lista, detalhe, risco) → o erro fica no estado da store e aparece no lugar do
-  conteúdo com `<ApiErrorMessage>` (decide a cor pelo `code`).
+- **A IA sugere, o código decide:** cada achado precisa citar um trecho que exista literalmente no
+  documento; tipos inválidos, certidões negativas e anos sem evidência são descartados com o motivo.
+- **Assíncrono:** a API responde 202 na hora; um job lê os documentos e dispara outro que grava o
+  resultado; a tela acompanha o progresso a cada 2 s.
+- **Explicável e auditável:** o score mostra cada peso (apontamentos, idade, PEP, sócios ×
+  participação, teto); ficam gravados tempos, tokens, modelo e a resposta bruta da IA.
+- **Medido:** o modelo especializado acerta 4 de 4 achados nos documentos de teste (o modelo
+  sem preparo acertou 1); detalhes em [docs/ia.md](docs/ia.md).
+- **Padrões:** respostas da API num formato único, mensagens em pt-BR/en, CPF/CNPJ validados
+  pelos dígitos verificadores, frontend tipado em camadas.
 
 ## Testes
 
 ```bash
-cd backend
-composer test:api       # 53 testes (API, anexos, validação de CPF/CNPJ, formato padrão, idioma)
-composer test:desafio   # 7 testes de aceitação do cálculo de risco
-php artisan test        # tudo
-
-cd frontend
-npm run type-check      # TypeScript (vue-tsc)
-npm run build           # type-check + build
+cd backend && php artisan test          # 68 testes (API, domínio, anexos, IA com Ollama simulado)
+cd frontend && npm run build            # type-check + build
+cd exemplos/fm-solucoes && php analisar-com-llama.php due-diligence   # avalia a IA real
 ```
+
+## Treino de live coding
+
+O domínio de risco nasceu como desafio de live coding. O esqueleto vazio está em
+[backend/treino](backend/treino) e os 7 testes de aceitação rodam com `composer test:desafio`.

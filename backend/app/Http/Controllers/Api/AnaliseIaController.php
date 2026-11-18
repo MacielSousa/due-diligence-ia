@@ -6,9 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AnaliseIaResource;
 use App\Http\Responses\ApiResponse;
 use App\Http\Responses\ErrorCode;
-use App\Jobs\AnalisarDocumentosJob;
 use App\Models\AnaliseIa;
 use App\Models\Terceiro;
+use App\Services\Ia\IniciadorDeAnalise;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -26,38 +27,21 @@ class AnaliseIaController extends Controller
      * POST /api/terceiros/{terceiro}/analises-ia
      * Cria a análise e dispara o job: responde 202 na hora, o resultado sai depois (acompanhe pelo GET).
      */
-    public function store(Request $request, Terceiro $terceiro): JsonResponse
+    public function store(Request $request, Terceiro $terceiro, IniciadorDeAnalise $iniciador): JsonResponse
     {
         $request->validate(['ano' => ['sometimes', 'integer', 'between:1990,2100']]);
 
-        if ($terceiro->analises()->whereIn('status', [AnaliseIa::PENDENTE, AnaliseIa::PROCESSANDO])->exists()) {
-            return ApiResponse::error(__('api.analise.em_andamento'), ErrorCode::Conflict, 409);
+        try {
+            $analise = $iniciador->iniciar($terceiro, (int) $request->input('ano', date('Y')));
+        } catch (DomainException $e) {
+            return $e->getCode() === 409
+                ? ApiResponse::error($e->getMessage(), ErrorCode::Conflict, 409)
+                : ApiResponse::error($e->getMessage(), ErrorCode::BusinessRule, 422);
         }
-
-        $anexos = $terceiro->anexos()->oldest('id')->get();
-        if ($anexos->isEmpty()) {
-            return ApiResponse::error(__('api.analise.sem_documentos'), ErrorCode::BusinessRule, 422);
-        }
-
-        $analise = $terceiro->analises()->create([
-            'status' => AnaliseIa::PENDENTE,
-            'modelo' => config('ia.modelo'),
-            'ano_referencia' => (int) $request->input('ano', date('Y')),
-            'documentos_total' => $anexos->count(),
-        ]);
-        foreach ($anexos as $anexo) {
-            $analise->documentos()->create([
-                'anexo_id' => $anexo->id,
-                'nome' => $anexo->nome_original,
-                'categoria' => $anexo->categoria,
-            ]);
-        }
-
-        AnalisarDocumentosJob::dispatch($analise->id);
 
         return ApiResponse::success(
             new AnaliseIaResource($analise->fresh('documentos')),
-            __('api.analise.iniciada', ['total' => $anexos->count()]),
+            __('api.analise.iniciada', ['total' => $analise->documentos_total]),
             202,
         );
     }
