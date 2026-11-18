@@ -18,10 +18,10 @@ composer desafio        # roda o script do desafio (desafio.php)
 composer test:desafio   # 7 testes de aceitação do cálculo de risco
 ```
 
-**Quer treinar de novo?** O esqueleto vazio (com o seu `Apontamento.php` em andamento) está em
-`backend/treino/esqueleto/`. Para praticar, copie esses arquivos por cima de
-`app/Domain/DueDiligence/` (mantenha o `Documento.php`) e rode `composer test:desafio`
-até os 7 passarem. Enquanto o domínio estiver incompleto, a API responde **501 `domain_incomplete`**.
+**Quer treinar de novo?** O esqueleto vazio está em `backend/treino/` (veja o README de lá).
+Enquanto o domínio estiver incompleto, a API responde **501 `domain_incomplete`**.
+
+> O backend é **só API**: não tem views nem Vite próprios. A interface é a pasta `frontend/`.
 
 ## Validação de documentos
 
@@ -42,13 +42,14 @@ e são baixados pela API. Excluir o anexo ou o terceiro apaga também o arquivo.
 ```bash
 # Terminal 1 — backend (http://localhost:8000)
 cd backend
-php artisan migrate:fresh --seed   # só na primeira vez / para resetar os dados
-php artisan serve
+composer setup   # só na 1ª vez: instala, cria .env e o banco SQLite com os dados de exemplo
+composer dev     # = php artisan serve
 ```
 
 ```bash
 # Terminal 2 — frontend (http://localhost:5180)
 cd frontend
+npm install      # só na 1ª vez
 npm run dev -- --port 5180
 ```
 
