@@ -54,8 +54,8 @@ Não é preciso ter PHP, Composer nem Node na máquina: tudo roda em containers.
 ### 2. Clonar
 
 ```bash
-git clone <url-do-repositorio> avaliacao-risco-fornecedores
-cd avaliacao-risco-fornecedores/apps/api
+git clone https://github.com/MacielSousa/due-diligence-ia.git
+cd due-diligence-ia/apps/api
 ```
 
 ### 3. Instalar as dependências PHP (sem PHP local)
