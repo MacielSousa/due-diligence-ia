@@ -19,7 +19,7 @@ final class DimensionAssessor
 
     /**
      * @param list<DocumentAnalysis> $analyses
-     * @return array{scores: array<string, DimensionScore>, summary: string, recommendation: string, missing: list<string>}
+     * @return array{scores: array<string, DimensionScore>, summary: string, recommendation: string, missing: list<string>, adjustments: list<string>}
      */
     public function assess(string $supplierName, array $analyses): array
     {
@@ -69,11 +69,68 @@ final class DimensionAssessor
             }
         }
 
+        [$scores, $adjustments] = $this->applySeverityFloor($scores, $analyses);
+
         return [
             'scores' => $scores,
             'summary' => trim((string) ($raw['resumo_executivo'] ?? '')),
             'recommendation' => trim((string) ($raw['recomendacao'] ?? '')),
             'missing' => $missing,
+            'adjustments' => $adjustments,
         ];
+    }
+
+    /**
+     * Piso de nota: a nota de uma dimensão não pode ficar abaixo do pior achado VALIDADO nela.
+     * A consolidação pode dar notas maiores, mas não pode "esquecer" um achado comprovado.
+     * Caso real: llama3.2:3b deu 10 para "financeira" logo após extrair "Prejuízo líquido de R$ 45 milhões" (alta).
+     *
+     * @param array<string, DimensionScore> $scores
+     * @param list<DocumentAnalysis> $analyses
+     * @return array{0: array<string, DimensionScore>, 1: list<string>}
+     */
+    private function applySeverityFloor(array $scores, array $analyses): array
+    {
+        /** @var array<string, array{floor: int, severity: string, ids: list<string>}> $worst */
+        $worst = [];
+        foreach ($analyses as $analysis) {
+            foreach ($analysis->findings as $finding) {
+                $key = $finding->dimension->value;
+                $floor = $finding->severity->scoreFloor();
+
+                if ($floor > ($worst[$key]['floor'] ?? 0)) {
+                    $worst[$key] = ['floor' => $floor, 'severity' => $finding->severity->value, 'ids' => [$finding->id]];
+                } elseif ($floor > 0 && $floor === ($worst[$key]['floor'] ?? 0)) {
+                    $worst[$key]['ids'][] = $finding->id;
+                }
+            }
+        }
+
+        $adjustments = [];
+        foreach ($worst as $key => $info) {
+            $current = $scores[$key];
+
+            if ($current->score >= $info['floor']) {
+                continue;
+            }
+
+            $adjustments[] = sprintf(
+                'Nota de %s elevada de %d para %d: há achado validado de severidade %s (%s).',
+                $key,
+                $current->score,
+                $info['floor'],
+                $info['severity'],
+                implode(', ', $info['ids']),
+            );
+
+            $scores[$key] = new DimensionScore(
+                $current->dimension,
+                $info['floor'],
+                trim($current->justification . ' [Piso por severidade: nota original do modelo ' . $current->score . '.]'),
+                array_values(array_unique([...$current->findingIds, ...$info['ids']])),
+            );
+        }
+
+        return [$scores, $adjustments];
     }
 }

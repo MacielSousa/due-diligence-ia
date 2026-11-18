@@ -65,8 +65,11 @@ final class RiskPipeline
         $confidence = $this->confidence($missing, $expired, $assessed['missing'], $analyses);
 
         $level = $classification['level'];
-        $reasons = $classification['reasons'];
+        $reasons = [...$assessed['adjustments'], ...$classification['reasons']];
 
+        if ($assessed['missing']) {
+            $reasons[] = 'Dimensões não avaliadas pelo modelo: ' . implode(', ', $assessed['missing']) . '.';
+        }
         if ($missing) {
             $reasons[] = 'Documentos obrigatórios ausentes: ' . implode(', ', $missing) . '.';
         }
@@ -74,11 +77,15 @@ final class RiskPipeline
             $reasons[] = 'Documentos vencidos: ' . implode(', ', $expired) . '.';
         }
 
-        $requiresReview = $level !== RiskLevel::Low || $confidence < $this->scorer->policy()->minConfidence;
+        // Revisão humana obrigatória: risco médio/elevado, confiança baixa ou lacuna na avaliação do modelo.
+        $lowConfidence = $confidence < $this->scorer->policy()->minConfidence;
+        $requiresReview = $level !== RiskLevel::Low || $lowConfidence || $assessed['missing'] !== [];
         if ($requiresReview) {
-            $reasons[] = $level === RiskLevel::Low
-                ? sprintf('Confiança %.2f abaixo do mínimo: revisão humana obrigatória.', $confidence)
-                : 'Risco ' . $level->label() . ': aprovação do comitê de compliance obrigatória.';
+            $reasons[] = match (true) {
+                $level !== RiskLevel::Low => 'Risco ' . $level->label() . ': aprovação do comitê de compliance obrigatória.',
+                $lowConfidence => sprintf('Confiança %.2f abaixo do mínimo: revisão humana obrigatória.', $confidence),
+                default => 'Modelo deixou dimensão sem avaliar: revisão humana obrigatória.',
+            };
         }
 
         return new Assessment(

@@ -22,6 +22,16 @@ enum Severity: string
         };
     }
 
+    /** Nota mínima da dimensão quando existe um achado validado com esta severidade. */
+    public function scoreFloor(): int
+    {
+        return match ($this) {
+            self::Low, self::Medium => 0,
+            self::High => 50,
+            self::Critical => 80,
+        };
+    }
+
     /** @return list<string> */
     public static function values(): array
     {
