@@ -1,0 +1,122 @@
+{
+  "app": {
+    "titulo": "Due Diligence",
+    "subtitulo": "Avaliação de risco de terceiros",
+    "idioma": "Idioma"
+  },
+  "layout": {
+    "rodape": "Desafio Due Diligence · Laravel 12 + Vue 3, Pinia, PrimeVue e Tailwind"
+  },
+  "nav": {
+    "relatorio": "Relatório",
+    "terceiros": "Terceiros"
+  },
+  "comum": {
+    "salvar": "Salvar",
+    "cancelar": "Cancelar",
+    "excluir": "Excluir",
+    "editar": "Editar",
+    "adicionar": "Adicionar",
+    "voltar": "Voltar",
+    "acoes": "Ações",
+    "todos": "Todos",
+    "sim": "Sim",
+    "nao": "Não",
+    "confirmar": "Confirmar",
+    "confirmarExclusao": "Deseja excluir \"{nome}\"? Esta ação não pode ser desfeita.",
+    "excluido": "Registro excluído.",
+    "salvo": "Registro salvo.",
+    "erro": "Erro",
+    "sucesso": "Sucesso",
+    "nenhumRegistro": "Nenhum registro encontrado.",
+    "semConexao": "Não foi possível conectar à API. O backend está rodando?"
+  },
+  "tipo": {
+    "pf": "Pessoa física",
+    "pj": "Pessoa jurídica"
+  },
+  "nivel": {
+    "BAIXO": "Baixo",
+    "MEDIO": "Médio",
+    "ALTO": "Alto",
+    "CRITICO": "Crítico"
+  },
+  "terceiro": {
+    "titulo": "Terceiros",
+    "descricao": "Pessoas físicas e jurídicas avaliadas no processo de due diligence.",
+    "novo": "Novo terceiro",
+    "detalhe": "Detalhe do terceiro",
+    "editar": "Editar terceiro",
+    "nome": "Nome",
+    "documento": "Documento",
+    "cpf": "CPF",
+    "cnpj": "CNPJ",
+    "tipo": "Tipo",
+    "pep": "PEP",
+    "pepLongo": "Pessoa politicamente exposta (PEP)",
+    "buscar": "Buscar por nome ou documento",
+    "naoEncontrado": "Terceiro não encontrado."
+  },
+  "apontamento": {
+    "titulo": "Apontamentos",
+    "tipo": "Tipo",
+    "ano": "Ano",
+    "peso": "Peso",
+    "selecione": "Selecione o tipo",
+    "nenhum": "Nenhum apontamento.",
+    "sancao": "Sanção",
+    "processo_criminal": "Processo criminal",
+    "midia_negativa": "Mídia negativa",
+    "processo_trabalhista": "Processo trabalhista"
+  },
+  "socio": {
+    "titulo": "Quadro societário",
+    "socio": "Sócio",
+    "participacao": "Participação",
+    "selecione": "Selecione o sócio",
+    "nenhum": "Nenhum sócio cadastrado.",
+    "total": "Total: {total}%"
+  },
+  "risco": {
+    "titulo": "Risco",
+    "ano": "Ano de referência",
+    "calcular": "Calcular risco",
+    "score": "Score",
+    "nivel": "Nível",
+    "naoCalculado": "Clique em \"Calcular risco\" para avaliar este terceiro."
+  },
+  "relatorio": {
+    "titulo": "Relatório de risco",
+    "descricao": "Score de cada terceiro, do maior para o menor risco.",
+    "atualizar": "Atualizar"
+  },
+  "anexo": {
+    "titulo": "Documentos",
+    "categoria": "Categoria",
+    "arquivo": "Arquivo",
+    "tamanho": "Tamanho",
+    "enviadoEm": "Enviado em",
+    "escolher": "Escolher arquivo",
+    "enviar": "Enviar",
+    "baixar": "Baixar arquivo",
+    "nenhum": "Nenhum documento anexado.",
+    "dica": "PDF, JPG ou PNG de até {max}.",
+    "muitoGrande": "O arquivo passa do limite de {max}.",
+    "categorias": {
+      "contrato_social": "Contrato social",
+      "certidao_negativa": "Certidão negativa",
+      "documento_identidade": "Documento de identidade",
+      "comprovante_endereco": "Comprovante de endereço",
+      "outro": "Outro"
+    }
+  },
+  "validacao": {
+    "cpfInvalido": "O CPF informado é inválido.",
+    "cnpjInvalido": "O CNPJ informado é inválido."
+  },
+  "primevue": {
+    "nenhumArquivo": "Nenhum arquivo escolhido",
+    "semResultados": "Nenhum resultado encontrado",
+    "semOpcoes": "Nenhuma opção disponível"
+  }
+}

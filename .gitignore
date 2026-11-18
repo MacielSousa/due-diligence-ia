@@ -1,7 +1,18 @@
-/vendor/
-/packages/*/vendor/
-/packages/*/composer.lock
+# dependências
+node_modules/
+vendor/
+
+# segredos e dados locais
+.env
+*.sqlite
+backend/storage/app/private/terceiros/
+
+# build e cache
+dist/
 .phpunit.result.cache
-.phpunit.cache/
+*.tsbuildinfo
+
+# editor / SO
 .idea/
 .vscode/
+.DS_Store

@@ -1,205 +1,145 @@
-# Avaliação de Risco de Fornecedores com LLM
+# Desafio Due Diligence
 
-Prova de conceito que usa um LLM para **resumir os documentos de uma construtora** e classificar o
-**risco de contratação** em **BAIXO, MÉDIO ou ELEVADO**, com evidência verificada, regras
-determinísticas e revisão humana.
+Treino de live coding (tema: avaliação de risco de terceiros), separado em:
 
-> A resposta escrita da questão está em [RESPOSTA.md](RESPOSTA.md).
-
-| Documento | Conteúdo |
+| Pasta | Stack |
 |---|---|
-| [docs/arquitetura.md](docs/arquitetura.md) | Como funciona: containers, módulos, pipeline, dados, fluxo, decisões |
-| [docs/api.md](docs/api.md) | Referência da API REST com exemplos |
-| [docs/operacao.md](docs/operacao.md) | Trocar o modelo de IA, GPU, testes, problemas comuns |
+| `backend/` | Laravel 12 — API REST (SQLite), respostas padronizadas e mensagens em pt-BR / en |
+| `frontend/` | Vue 3 + **TypeScript**, Vite, Vue Router, Pinia, PrimeVue 4, Tailwind CSS 3, vue-i18n |
 
-## Em uma frase
+## O desafio
 
-O LLM lê cada documento e extrai achados **com trecho literal**. O código confere se o trecho existe,
-aplica regras eliminatórias (Lista Suja, CEIS/CNEP, falência…) e calcula o nível de risco. O comitê
-decide.
-
-```
-Vue (5173) ─► Laravel API (8080) ─► MySQL · MongoDB
-                   └─ fila Redis ─► worker ─► risk-engine ─► LLM (heurístico | Llama local | Claude)
-```
-
-## Stack
-
-| Camada | Tecnologia |
-|---|---|
-| Motor de risco | PHP 8.2+ puro (`packages/risk-engine`) |
-| API | Laravel 13, módulos próprios, Laravel Sail |
-| Frontend | Vue 3, Vite, TypeScript |
-| Bancos | MySQL 8.4 (relacional), MongoDB (texto e auditoria), Redis (fila) |
-| IA | Heurístico offline · Llama 3.2 via Ollama · Claude via Anthropic PHP SDK |
-| Testes | PHPUnit (unitários e integração), Vitest |
-
----
-
-## Como executar
-
-### 1. Pré-requisitos
-
-| Item | Observação |
-|---|---|
-| **Docker** com Compose v2 | No Windows: dentro do **WSL 2** (Docker Engine no Ubuntu ou Docker Desktop com integração WSL) |
-| **Git** | |
-| ~6 GB livres em disco | Imagens dos containers (+2 GB se usar o Llama) |
-
-Não é preciso ter PHP, Composer nem Node na máquina: tudo roda em containers.
-
-> **Windows:** execute todos os comandos **dentro do WSL** (terminal do Ubuntu) e mantenha o projeto no
-> sistema de arquivos do Linux (ex.: `~/projetos`), não em `/mnt/c`. Assim os volumes ficam rápidos.
-
-### 2. Clonar
+O domínio está **implementado** em `backend/app/Domain/DueDiligence/`
+(`Documento`, `Apontamento`, `Terceiro`, `PessoaFisica`, `PessoaJuridica`, `AnalisadorDeRisco`).
 
 ```bash
-git clone https://github.com/MacielSousa/due-diligence-ia.git
-cd due-diligence-ia/apps/api
+cd backend
+composer desafio        # roda o script do desafio (desafio.php)
+composer test:desafio   # 7 testes de aceitação do cálculo de risco
 ```
 
-### 3. Instalar as dependências PHP (sem PHP local)
+**Quer treinar de novo?** O esqueleto vazio (com o seu `Apontamento.php` em andamento) está em
+`backend/treino/esqueleto/`. Para praticar, copie esses arquivos por cima de
+`app/Domain/DueDiligence/` (mantenha o `Documento.php`) e rode `composer test:desafio`
+até os 7 passarem. Enquanto o domínio estiver incompleto, a API responde **501 `domain_incomplete`**.
 
-O comando monta a **raiz do monorepo** porque a API usa o pacote `packages/risk-engine`:
+## Validação de documentos
+
+CPF e CNPJ são validados pelos **dígitos verificadores** em três lugares, com o mesmo algoritmo:
+- `app/Domain/DueDiligence/Documento.php` — usado pelo domínio;
+- `app/Rules/CpfValido.php` e `CnpjValido.php` — Form Request da API (mensagem em pt-BR/en);
+- `frontend/src/utils/documento.ts` — avisa no formulário antes de enviar.
+
+## Documentos anexados
+
+Cada terceiro pode ter arquivos anexados (PDF, JPG, PNG até 2 MB), por categoria: contrato social,
+certidão negativa, documento de identidade, comprovante de endereço ou outro.
+Os arquivos ficam em `backend/storage/app/private/terceiros/{id}/anexos/` (fora da pasta pública)
+e são baixados pela API. Excluir o anexo ou o terceiro apaga também o arquivo.
+
+## Rodar o projeto (2 terminais no WSL)
 
 ```bash
-docker run --rm -u "$(id -u):$(id -g)" \
-  -v "$(cd ../.. && pwd)":/app -w /app/apps/api \
-  composer:2 composer install --ignore-platform-reqs --no-interaction
+# Terminal 1 — backend (http://localhost:8000)
+cd backend
+php artisan migrate:fresh --seed   # só na primeira vez / para resetar os dados
+php artisan serve
 ```
-
-Se você já tem PHP 8.3+ e Composer, basta `composer install --ignore-platform-req=ext-mongodb`.
-
-### 4. Configurar o ambiente
 
 ```bash
-cp .env.example .env
+# Terminal 2 — frontend (http://localhost:5180)
+cd frontend
+npm run dev -- --port 5180
 ```
 
-Os padrões já funcionam. Principais variáveis:
+O Vite repassa `/api/*` para o Laravel (proxy em `vite.config.ts`), então não há CORS.
 
-| Variável | Padrão | Para quê |
+## Padrão de resposta da API
+
+Toda resposta segue o mesmo formato (`app/Http/Responses/ApiResponse.php`):
+
+```jsonc
+// sucesso
+{ "success": true, "message": "Terceiro cadastrado com sucesso.", "data": { ... }, "meta": { ... } }
+
+// erro
+{ "success": false, "message": "Os dados informados são inválidos.", "code": "validation_error",
+  "errors": { "nome": ["O campo nome é obrigatório."] }, "detail": "..." }
+```
+
+| `code` | HTTP | Quando |
 |---|---|---|
-| `APP_PORT` | `8080` | Porta da API |
-| `WEB_PORT` | `5173` | Porta do frontend |
-| `FORWARD_DB_PORT` / `FORWARD_REDIS_PORT` / `FORWARD_MONGODB_PORT` | `3307` / `6380` / `27018` | Acesso aos bancos pelo host |
-| `IA_DRIVER` | `heuristico` | `heuristico`, `ollama` ou `anthropic` ([detalhes](docs/operacao.md#trocar-o-driver-de-ia)) |
+| `validation_error` | 422 | Form Request falhou (vem com `errors` por campo) |
+| `business_rule` | 422 | Regra do domínio violada (CPF inválido, ciclo societário…) |
+| `not_found` | 404 | Recurso inexistente |
+| `method_not_allowed` | 405 | Método HTTP errado |
+| `domain_incomplete` | 501 | Classes do desafio incompletas (`detail` diz o que falta) |
+| `internal_error` | 500 | Erro inesperado (`detail` só com `APP_DEBUG=true`) |
 
-### 5. Subir os containers
+**Idioma:** o frontend envia `Accept-Language` (idioma escolhido na tela) e o middleware
+`DefinirIdioma` faz o Laravel responder no mesmo idioma — inclusive as mensagens de validação
+(`lang/pt_BR`, `lang/en`).
 
-```bash
-./vendor/bin/sail up -d
-```
+## Endpoints
 
-Na primeira vez a imagem PHP é construída (alguns minutos) e o container `web` roda `npm install`
-sozinho. Acompanhe com `./vendor/bin/sail ps`.
-
-### 6. Gerar a chave e criar o banco com dados de demonstração
-
-```bash
-./vendor/bin/sail artisan key:generate
-./vendor/bin/sail artisan migrate --seed
-```
-
-O seed cria três construtoras **fictícias**:
-
-| ID | Construtora | Resultado esperado (driver heurístico) |
+| Método | Rota | Descrição |
 |---|---|---|
-| 1 | Horizonte Azul S.A. | **BAIXO**: todas as certidões negativas |
-| 2 | Pedra Firme Ltda. | **MÉDIO**: prejuízo, protestos, atraso de obra, passivo trabalhista |
-| 3 | Muralha Ltda. | **ELEVADO**: consta na Lista Suja (eliminatório), recuperação judicial |
+| GET | `/api/terceiros?busca=&tipo=pf\|pj` | Lista |
+| POST | `/api/terceiros` | Cria (`tipo`, `nome`, `documento`, `pep`) |
+| GET | `/api/terceiros/{id}` | Detalhe com apontamentos e sócios |
+| PUT | `/api/terceiros/{id}` | Atualiza (`nome`, `documento`, `pep`) |
+| DELETE | `/api/terceiros/{id}` | Exclui (cascata) |
+| POST | `/api/terceiros/{id}/apontamentos` | `tipo`, `ano` |
+| DELETE | `/api/terceiros/{id}/apontamentos/{apontamentoId}` | |
+| POST | `/api/terceiros/{id}/socios` | `socio_id`, `participacao` (só PJ, soma ≤ 100) |
+| DELETE | `/api/terceiros/{id}/socios/{socioId}` | |
+| GET | `/api/terceiros/{id}/anexos` | Lista os documentos anexados |
+| POST | `/api/terceiros/{id}/anexos` | Upload multipart: `categoria`, `arquivo` |
+| GET | `/api/terceiros/{id}/anexos/{anexoId}/download` | Baixa o arquivo |
+| DELETE | `/api/terceiros/{id}/anexos/{anexoId}` | Remove o anexo e o arquivo |
+| GET | `/api/terceiros/{id}/risco?ano=2026` | Score + nível (usa o domínio) |
+| GET | `/api/relatorio-risco?ano=2026` | Ranking de todos (`meta.ano`) |
 
-### 7. Acessar
+## Frontend: uma responsabilidade por camada
 
-| O quê | Endereço |
-|---|---|
-| **Aplicação** | <http://localhost:5173> |
-| API | <http://localhost:8080/api/fornecedores> |
-| Health check | <http://localhost:8080/up> |
-
-Roteiro de demonstração:
-
-1. Abra <http://localhost:5173> e entre em **Construtora Muralha Ltda.**
-2. Clique em **Avaliar risco**. A avaliação vai para a fila e a tela acompanha o processamento.
-3. Veja o parecer **ELEVADO**: o sinal eliminatório com a evidência literal, as notas por dimensão, os
-   documentos faltantes e o motivo de cada decisão.
-4. Registre a **decisão do comitê** e abra a **auditoria das chamadas ao LLM** (vinda do MongoDB).
-
-Pelo terminal, sem fila:
-
-```bash
-./vendor/bin/sail artisan risco:avaliar 3
+```
+componente/página ──> store (Pinia) ──> service ──> useApi ──> fetch
+       │                 estado          endpoints     HTTP, idioma, formato padrão, ApiError
+       └── useNotificacao().executar(): toast com a `message` da API + erros nos campos
 ```
 
-### 8. (Opcional) Usar um LLM de verdade
-
-Por padrão roda o driver **heurístico**: offline, gratuito e determinístico, ideal para demo e testes.
-
-**Llama local e gratuito (Ollama):**
-
-```bash
-./vendor/bin/sail exec ollama ollama pull llama3.2:3b   # ~2 GB, uma vez só
-bash ../../scripts/avaliar-com-llama.sh                 # avalia as 3 construtoras com o Llama
+```
+frontend/src/
+  types/          api.ts (ApiSucesso, ApiFalha, ErrorCode), terceiro.ts, risco.ts, router.d.ts
+  composables/    useApi.ts (conector HTTP + ApiError), useNotificacao.ts (padrão de mensagens)
+  services/       terceirosService.ts, riscoService.ts  (quais endpoints + tipo do retorno)
+  stores/         app.ts (idioma), terceiros.ts, risco.ts  (estado)
+  layouts/        DefaultLayout.vue  (header + <RouterView/> + footer)
+  pages/          RelatorioPage, TerceirosPage, TerceiroDetalhePage
+  components/
+    layout/       AppHeader, AppNav (menu gerado pelas rotas), LanguageSwitcher, AppFooter
+    ui/           PageHeader, SectionCard, ApiErrorMessage, CampoErro
+    terceiros/    TerceiroDialog, ApontamentosCard, SociosCard
+    risco/        RiscoCard, ResumoNiveis, NivelTag
+  i18n/           pt-BR.json, en.json
+  router/         rotas filhas do DefaultLayout (meta: titulo, menu, icone, menuPai)
 ```
 
-Para o botão da tela usar o Llama, defina `IA_DRIVER=ollama` no `.env` e rode
-`./vendor/bin/sail restart queue`. Tem GPU NVIDIA? Veja
-[GPU NVIDIA para o Ollama](docs/operacao.md#gpu-nvidia-para-o-ollama-wsl).
-
-**Claude (Anthropic):**
-
-```bash
-bash ../../scripts/configurar-claude.sh   # pede a chave sem exibi-la e reinicia o worker
-```
-
-### 9. Parar
-
-```bash
-./vendor/bin/sail down      # para os containers e mantém os dados
-./vendor/bin/sail down -v   # para e apaga bancos e modelo baixado
-```
-
----
+Regras do padrão de mensagens:
+- **Ação** (salvar, excluir, adicionar) → `notificacao.executar(() => store.acao(), { erros })`:
+  toast de sucesso com a `message` do backend; em erro, toast + `errors` nos campos (`<CampoErro>`).
+- **Carregamento** (lista, detalhe, risco) → o erro fica no estado da store e aparece no lugar do
+  conteúdo com `<ApiErrorMessage>` (decide a cor pelo `code`).
 
 ## Testes
 
-Com os containers no ar, a partir da raiz do repositório:
-
 ```bash
-bash scripts/testar-tudo.sh
+cd backend
+composer test:api       # 53 testes (API, anexos, validação de CPF/CNPJ, formato padrão, idioma)
+composer test:desafio   # 7 testes de aceitação do cálculo de risco
+php artisan test        # tudo
+
+cd frontend
+npm run type-check      # TypeScript (vue-tsc)
+npm run build           # type-check + build
 ```
-
-| Suíte | Testes | O que cobre |
-|---|---|---|
-| Motor de risco: unitários | 35 | Score, eliminatórios, evidência, negação, piso por severidade, confiança, prompt injection, regressões do Llama |
-| Módulos Laravel: unitários | 14 | CNPJ, auditoria, seleção de driver, cliente Ollama |
-| Integração: API + MySQL + Redis + MongoDB | 17 | Fluxo completo das 3 construtoras, fila, auditoria, 409/422, decisão |
-| Frontend: Vitest | 9 | Componentes, formatação, cliente da API |
-| Frontend: type-check + build | — | `vue-tsc` + `vite build` |
-
-Comandos por suíte em [docs/operacao.md](docs/operacao.md#testes).
-
-## Estrutura
-
-```
-.
-├── RESPOSTA.md              # resposta da questão
-├── docs/                    # arquitetura, API, operação
-├── scripts/                 # testes, Llama, Claude, GPU
-├── packages/risk-engine/    # motor de risco (PHP puro)
-└── apps/
-    ├── api/                 # Laravel 13 + Sail
-    │   └── modules/         # Fornecedores, Documentos, IA, Auditoria, Avaliacao
-    └── web/                 # Vue 3 + Vite + TypeScript
-```
-
-## Limites da PoC
-
-- Sem autenticação nem perfis de acesso.
-- Documentos entram como texto (`.txt` ou colado). Extração de PDF/OCR e integração com fontes oficiais
-  ficam para a próxima etapa.
-- O driver heurístico existe para demo e testes; não substitui um LLM.
-- Falta um conjunto de avaliação (evals) com empresas já classificadas por analistas para medir a
-  qualidade antes de usar em decisões reais.
-
-Próximos passos em [docs/arquitetura.md](docs/arquitetura.md#13-próximos-passos-para-produção).
