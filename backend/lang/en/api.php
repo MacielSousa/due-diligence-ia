@@ -28,6 +28,11 @@ return [
         'criado' => 'Document attached successfully.',
         'excluido' => 'Document removed.',
     ],
+    'analise' => [
+        'iniciada' => 'Analysis started: the AI will read :total document(s). Follow the progress.',
+        'em_andamento' => 'There is already an analysis in progress for this third party.',
+        'sem_documentos' => 'Attach at least one document before requesting the analysis.',
+    ],
     'risco' => [
         'calculado' => 'Risk calculated.',
     ],

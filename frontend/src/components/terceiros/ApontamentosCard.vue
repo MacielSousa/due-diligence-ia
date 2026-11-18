@@ -7,6 +7,7 @@ import Select from 'primevue/select'
 import InputNumber from 'primevue/inputnumber'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Tag from 'primevue/tag'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import CampoErro from '@/components/ui/CampoErro.vue'
 import { useTerceirosStore } from '@/stores/terceiros'
@@ -56,7 +57,11 @@ function remover(apontamento: Apontamento): void {
     <DataTable :value="atual.apontamentos" data-key="id" size="small">
       <template #empty>{{ t('apontamento.nenhum') }}</template>
       <Column :header="t('apontamento.tipo')">
-        <template #body="{ data }">{{ t(`apontamento.${data.tipo}`) }}</template>
+        <template #body="{ data }">
+          {{ t(`apontamento.${data.tipo}`) }}
+          <Tag v-if="data.origem === 'ia'" value="IA" severity="info" icon="pi pi-sparkles" class="ml-2 !text-xs" />
+          <div v-if="data.trecho" class="text-xs italic text-surface-500 mt-0.5 line-clamp-2" :title="data.trecho">"{{ data.trecho }}"</div>
+        </template>
       </Column>
       <Column field="ano" :header="t('apontamento.ano')" />
       <Column class="w-16 text-right">

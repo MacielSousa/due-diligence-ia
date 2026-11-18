@@ -9,6 +9,7 @@ enum ErrorCode: string
     case BusinessRule = 'business_rule';        // 422 - regra de negócio do domínio violada
     case NotFound = 'not_found';                // 404
     case MethodNotAllowed = 'method_not_allowed'; // 405
+    case Conflict = 'conflict';                 // 409 - ex.: já existe análise em andamento
     case DomainIncomplete = 'domain_incomplete'; // 501 - classes do desafio ainda não implementadas
     case Http = 'http_error';                   // outros erros HTTP
     case Internal = 'internal_error';           // 500

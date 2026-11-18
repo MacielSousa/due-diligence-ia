@@ -1,0 +1,50 @@
+DOCUMENTO FICTÍCIO - GERADO PARA TESTE DO SISTEMA DE DUE DILIGENCE - SEM VALOR LEGAL
+
+CONTRATO SOCIAL CONSOLIDADO
+FM Soluções Tecnologicas - CNPJ 45.278.245/0001-13 - 3ª alteração contratual, registrada em 12/03/2024
+======================================================================
+
+## Cláusula 1ª - Denominação e sede
+A sociedade gira sob a denominação FM Soluções Tecnologicas, sociedade empresária
+limitada, inscrita no CNPJ sob o nº 45.278.245/0001-13, com sede na Rua das Palmeiras
+Fictícias, 1200, Sala 41, Centro, Cidade Exemplo/SP, CEP 01000-000.
+
+## Cláusula 2ª - Objeto social
+A sociedade tem por objeto: (a) desenvolvimento e licenciamento de programas de computador sob
+encomenda; (b) consultoria em tecnologia da informação; (c) suporte técnico e manutenção
+de sistemas; (d) prestação de serviços de tecnologia a órgãos públicos, mediante
+participação em licitações.
+
+## Cláusula 3ª - Prazo e início das atividades
+A sociedade iniciou suas atividades em 05/08/2019 e seu prazo de duração é indeterminado.
+
+## Cláusula 4ª - Capital social
+O capital social é de R$ 200.000,00 (duzentos mil reais), dividido em 200.000 quotas de R$
+1,00 cada, totalmente integralizado em moeda corrente, distribuído da seguinte forma:
+- Felipe Moraes Teste, brasileiro, empresário, CPF 987.654.321-00: 100.000 quotas (50%), R$
+100.000,00;
+- Mariana Teixeira Teste, brasileira, analista de sistemas, CPF 246.813.579-28: 60.000 quotas
+(30%), R$ 60.000,00;
+- Holding XPTO, pessoa jurídica, CNPJ 11.222.333/0001-81: 40.000 quotas (20%), R$ 40.000,00.
+
+## Cláusula 5ª - Administração
+A administração da sociedade cabe isoladamente ao sócio Felipe Moraes Teste, com poderes
+para representá-la ativa e passivamente, inclusive perante órgãos públicos e em
+procedimentos licitatórios.
+Declara o administrador que exerceu o cargo de Secretário Municipal de Administração da
+Prefeitura de Cidade Exemplo entre 01/2017 e 12/2020, sendo, portanto, pessoa politicamente
+exposta (PEP) nos termos da regulamentação aplicável.
+
+## Cláusula 6ª - Desimpedimento
+Os sócios declaram, sob as penas da lei, que não estão impedidos de exercer a
+administração da sociedade por lei especial ou em virtude de condenação criminal transitada
+em julgado.
+
+## Cláusula 7ª - Foro
+Fica eleito o foro da Comarca de Cidade Exemplo/SP para dirimir quaisquer dúvidas oriundas
+deste contrato.
+
+Cidade Exemplo/SP, 12 de março de 2024.
+Felipe Moraes Teste  |  Mariana Teixeira Teste  |  Holding XPTO (por seu representante legal)
+
+DOCUMENTO FICTÍCIO - GERADO PARA TESTE DO SISTEMA DE DUE DILIGENCE - SEM VALOR LEGAL

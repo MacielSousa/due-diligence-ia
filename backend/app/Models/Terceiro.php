@@ -32,6 +32,11 @@ class Terceiro extends Model
         return $this->hasMany(Anexo::class);
     }
 
+    public function analises(): HasMany
+    {
+        return $this->hasMany(AnaliseIa::class);
+    }
+
     /** Sócios desta empresa (só faz sentido para PJ). */
     public function socios(): HasMany
     {

@@ -49,18 +49,37 @@ class PessoaJuridica extends Terceiro
      * POR VALOR, cada ramo recebe a sua cópia: o mesmo sócio por dois caminhos
      * diferentes não é ciclo; só é ciclo quando a empresa reaparece no próprio caminho.
      */
-    public function calcularRisco(int $anoReferencia, array $cadeia = []): float
+    public function explicarRisco(int $anoReferencia, array $cadeia = []): array
     {
         if (in_array($this->documento, $cadeia, true)) {
             throw new LogicException("Ciclo societário detectado em {$this->getNome()}");
         }
         $cadeia[] = $this->documento;
 
-        $score = $this->riscoProprio($anoReferencia);
+        $riscoProprio = $this->riscoProprio($anoReferencia);
+        $soma = $riscoProprio;
+        $socios = [];
+
         foreach ($this->socios as $vinculo) {
-            $score += $vinculo['socio']->calcularRisco($anoReferencia, $cadeia) * $vinculo['participacao'] / 100;
+            $explicacao = $vinculo['socio']->explicarRisco($anoReferencia, $cadeia);
+            $contribuicao = $explicacao['score'] * $vinculo['participacao'] / 100;
+            $soma += $contribuicao;
+
+            $socios[] = [
+                'nome' => $explicacao['nome'],
+                'participacao' => $vinculo['participacao'],
+                'score_socio' => $explicacao['score'],
+                'contribuicao' => round($contribuicao, 2),
+                'explicacao' => $explicacao,
+            ];
         }
 
-        return $this->limitar($score);
+        return $this->resultado('pj', [
+            'apontamentos' => $this->explicarApontamentos($anoReferencia),
+            'risco_proprio' => $riscoProprio,
+            'pep' => false,
+            'adicional_pep' => 0,
+            'socios' => $socios,
+        ], $soma);
     }
 }

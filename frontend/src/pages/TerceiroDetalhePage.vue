@@ -12,6 +12,7 @@ import RiscoCard from '@/components/risco/RiscoCard.vue'
 import ApontamentosCard from '@/components/terceiros/ApontamentosCard.vue'
 import SociosCard from '@/components/terceiros/SociosCard.vue'
 import AnexosCard from '@/components/terceiros/AnexosCard.vue'
+import AnaliseIaCard from '@/components/analise/AnaliseIaCard.vue'
 import TerceiroDialog from '@/components/terceiros/TerceiroDialog.vue'
 import { useTerceirosStore } from '@/stores/terceiros'
 import { useNotificacao } from '@/composables/useNotificacao'
@@ -71,6 +72,8 @@ function excluir(): void {
           <Button :label="t('comum.excluir')" icon="pi pi-trash" severity="danger" outlined @click="excluir" />
         </template>
       </PageHeader>
+
+      <AnaliseIaCard :terceiro-id="idNum" />
 
       <div class="grid lg:grid-cols-3 gap-5 items-start">
         <RiscoCard :terceiro-id="idNum" />

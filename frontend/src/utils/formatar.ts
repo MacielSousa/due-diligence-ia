@@ -26,6 +26,16 @@ export function formatarDataHora(iso: string, locale: string): string {
   return new Date(iso).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })
 }
 
+/** 92450 -> "1 min 32 s" | 14200 -> "14,2 s" | 350 -> "350 ms" */
+export function formatarDuracao(ms: number | null | undefined, locale: string): string {
+  if (ms === null || ms === undefined) return '—'
+  if (ms < 1000) return `${ms} ms`
+  const segundos = ms / 1000
+  if (segundos < 60) return `${segundos.toLocaleString(locale, { maximumFractionDigits: 1 })} s`
+  const min = Math.floor(segundos / 60)
+  return `${min} min ${Math.round(segundos - min * 60)} s`
+}
+
 /** Ícone do PrimeIcons conforme o tipo do arquivo. */
 export function iconeArquivo(mime: string): string {
   if (mime === 'application/pdf') return 'pi pi-file-pdf'

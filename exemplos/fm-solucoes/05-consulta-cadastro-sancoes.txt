@@ -1,0 +1,26 @@
+DOCUMENTO FICTÍCIO - GERADO PARA TESTE DO SISTEMA DE DUE DILIGENCE - SEM VALOR LEGAL
+
+CONSULTA A CADASTRO DE EMPRESAS SANCIONADAS
+Modelo simulado de cadastro de sanções administrativas - Consulta realizada em 05/11/2026, 14:10
+======================================================================
+
+## Parâmetro da consulta
+CNPJ 45.278.245/0001-13 (FM Soluções Tecnologicas)
+
+## Resultado: 1 sanção VIGENTE encontrada
+Tipo de sanção: Impedimento de licitar e contratar com a Administração Pública
+Fundamentação legal: art. 156, III, da Lei nº 14.133/2021
+Órgão sancionador: Prefeitura Municipal de Cidade Exemplo/SP (fictício)
+Processo administrativo: PA nº 112/2025
+Data de início: 03/02/2026
+Data de término: 02/02/2029 (prazo de 3 anos)
+Abrangência: âmbito do ente federativo sancionador
+Motivo: apresentação de documentação falsa e comportamento inidôneo no Pregão Eletrônico
+nº 045/2025.
+
+## Sócios pesquisados
+Felipe Moraes Teste: nenhuma sanção individual registrada.
+Mariana Teixeira Teste: nenhuma sanção individual registrada.
+Holding XPTO (CNPJ 11.222.333/0001-81): nenhuma sanção registrada.
+
+DOCUMENTO FICTÍCIO - GERADO PARA TESTE DO SISTEMA DE DUE DILIGENCE - SEM VALOR LEGAL

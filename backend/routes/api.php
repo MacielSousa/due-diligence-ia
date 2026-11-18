@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AnaliseIaController;
 use App\Http\Controllers\Api\AnexoController;
 use App\Http\Controllers\Api\ApontamentoController;
 use App\Http\Controllers\Api\RiscoController;
@@ -25,6 +26,11 @@ Route::scopeBindings()->prefix('terceiros/{terceiro}')->group(function () {
     Route::delete('anexos/{anexo}', [AnexoController::class, 'destroy']);
 
     Route::get('risco', [RiscoController::class, 'show']);
+
+    // análise dos documentos pela IA (assíncrona: POST dispara o job, GET acompanha)
+    Route::get('analises-ia', [AnaliseIaController::class, 'index']);
+    Route::post('analises-ia', [AnaliseIaController::class, 'store']);
+    Route::get('analises-ia/{analise}', [AnaliseIaController::class, 'show']);
 });
 
 Route::get('relatorio-risco', [RiscoController::class, 'relatorio']);

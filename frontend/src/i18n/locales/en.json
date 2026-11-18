@@ -67,7 +67,9 @@
     "sancao": "Sanction",
     "processo_criminal": "Criminal case",
     "midia_negativa": "Adverse media",
-    "processo_trabalhista": "Labor lawsuit"
+    "processo_trabalhista": "Labor lawsuit",
+    "pep": "Politically exposed person",
+    "debito_fiscal": "Tax debt"
   },
   "socio": {
     "titulo": "Ownership structure",
@@ -118,5 +120,56 @@
     "nenhumArquivo": "No file chosen",
     "semResultados": "No results found",
     "semOpcoes": "No available options"
+  },
+  "analise": {
+    "titulo": "AI analysis",
+    "analisar": "Analyze documents with AI",
+    "reanalisar": "Analyze again",
+    "analisando": "Analyzing...",
+    "descricao": "Llama reads the attached documents, the system checks each finding and computes the score for {ano}.",
+    "semDocumentos": "Attach documents (PDF) for the AI to analyze.",
+    "naFila": "Queued, waiting for the worker...",
+    "lendo": "The AI is reading the documents...",
+    "falhou": "The analysis could not be completed.",
+    "recomendacaoTitulo": "Recommendation",
+    "recomendacao": {
+      "aprovar": "Approve",
+      "aprovar_com_ressalvas": "Approve with caveats",
+      "revisao_comite": "Send to committee",
+      "reprovar": "Reject"
+    },
+    "alertaEliminatorio": "There is a disqualifying finding (active sanction that bars bidding or contracting): the recommendation is to reject, regardless of the score.",
+    "metricas": {
+      "duracao": "Analysis duration",
+      "espera": "Queue wait",
+      "achados": "Valid findings",
+      "descartados": "+{n} discarded",
+      "concluidaEm": "Finished at"
+    },
+    "porque": "Why this score?",
+    "documentos": "Documents read by the AI",
+    "achadosCount": "{n} finding(s)",
+    "semAchados": "No findings: no risk identified in this document.",
+    "eliminatorio": "Disqualifying",
+    "informativo": "Informative (not scored)",
+    "descartado": "Discarded by the system",
+    "explicacao": {
+      "apontamentos": "1. Company findings",
+      "pesoBase": "Weight",
+      "idade": "Age",
+      "anos": "{n} years",
+      "metade": "half weight",
+      "peso": "Adds",
+      "semApontamentos": "No findings.",
+      "riscoProprio": "Own risk",
+      "adicionalPep": "2. Politically exposed person (PEP) add-on",
+      "socios": "2. Partners (partner score × share)",
+      "scoreSocio": "Partner score",
+      "contribuicao": "Adds",
+      "soma": "Sum",
+      "teto": "Cap applied (maximum)",
+      "scoreFinal": "Final score",
+      "faixas": "Ranges"
+    }
   }
 }

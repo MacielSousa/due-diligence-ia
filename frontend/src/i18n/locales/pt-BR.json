@@ -67,7 +67,9 @@
     "sancao": "Sanção",
     "processo_criminal": "Processo criminal",
     "midia_negativa": "Mídia negativa",
-    "processo_trabalhista": "Processo trabalhista"
+    "processo_trabalhista": "Processo trabalhista",
+    "pep": "Pessoa politicamente exposta",
+    "debito_fiscal": "Débito fiscal"
   },
   "socio": {
     "titulo": "Quadro societário",
@@ -118,5 +120,56 @@
     "nenhumArquivo": "Nenhum arquivo escolhido",
     "semResultados": "Nenhum resultado encontrado",
     "semOpcoes": "Nenhuma opção disponível"
+  },
+  "analise": {
+    "titulo": "Análise por IA",
+    "analisar": "Analisar documentos com IA",
+    "reanalisar": "Analisar novamente",
+    "analisando": "Analisando...",
+    "descricao": "A Llama lê os documentos anexados, o sistema confere cada achado e calcula o score para {ano}.",
+    "semDocumentos": "Anexe documentos (PDF) para a IA analisar.",
+    "naFila": "Na fila, aguardando o worker...",
+    "lendo": "A IA está lendo os documentos...",
+    "falhou": "A análise não pôde ser concluída.",
+    "recomendacaoTitulo": "Recomendação",
+    "recomendacao": {
+      "aprovar": "Aprovar",
+      "aprovar_com_ressalvas": "Aprovar com ressalvas",
+      "revisao_comite": "Enviar ao comitê",
+      "reprovar": "Reprovar"
+    },
+    "alertaEliminatorio": "Há um achado eliminatório (sanção vigente que impede licitar ou contratar): a recomendação é reprovar, independente do score.",
+    "metricas": {
+      "duracao": "Duração da análise",
+      "espera": "Espera na fila",
+      "achados": "Achados válidos",
+      "descartados": "+{n} descartados",
+      "concluidaEm": "Concluída em"
+    },
+    "porque": "Por que esse score?",
+    "documentos": "Documentos lidos pela IA",
+    "achadosCount": "{n} achado(s)",
+    "semAchados": "Nenhum achado: documento sem risco identificado.",
+    "eliminatorio": "Eliminatório",
+    "informativo": "Informativo (não entra no score)",
+    "descartado": "Descartado pelo sistema",
+    "explicacao": {
+      "apontamentos": "1. Apontamentos da empresa",
+      "pesoBase": "Peso",
+      "idade": "Idade",
+      "anos": "{n} anos",
+      "metade": "vale metade",
+      "peso": "Entra",
+      "semApontamentos": "Nenhum apontamento.",
+      "riscoProprio": "Risco próprio",
+      "adicionalPep": "2. Adicional por pessoa politicamente exposta (PEP)",
+      "socios": "2. Sócios (score do sócio × participação)",
+      "scoreSocio": "Score do sócio",
+      "contribuicao": "Contribui",
+      "soma": "Soma",
+      "teto": "Teto aplicado (máximo)",
+      "scoreFinal": "Score final",
+      "faixas": "Faixas"
+    }
   }
 }

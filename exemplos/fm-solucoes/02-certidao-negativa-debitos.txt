@@ -1,0 +1,23 @@
+DOCUMENTO FICTÍCIO - GERADO PARA TESTE DO SISTEMA DE DUE DILIGENCE - SEM VALOR LEGAL
+
+CERTIDÃO NEGATIVA DE DÉBITOS TRIBUTÁRIOS
+Modelo simulado - Emissor: Secretaria da Fazenda de Cidade Exemplo (fictícia) - Código de controle: FAKE-7F3A-2026-0918
+======================================================================
+
+## Contribuinte
+Razão social: FM Soluções Tecnologicas
+CNPJ: 45.278.245/0001-13
+
+## Certificação
+Certifica-se que, até a presente data, NÃO CONSTAM pendências em nome do contribuinte acima
+identificado relativas a tributos administrados por este órgão, nem inscrições em dívida
+ativa.
+Esta certidão refere-se exclusivamente à situação do contribuinte no âmbito deste órgão
+e não abrange débitos de outras esferas.
+
+## Validade
+Emitida em 03/11/2026, às 10:42. Válida até 02/05/2027.
+A autenticidade desta certidão NÃO pode ser verificada, pois se trata de documento fictício
+para testes.
+
+DOCUMENTO FICTÍCIO - GERADO PARA TESTE DO SISTEMA DE DUE DILIGENCE - SEM VALOR LEGAL

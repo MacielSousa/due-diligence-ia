@@ -40,9 +40,27 @@ final class Apontamento
 
     public function peso(int $anoReferencia): int
     {
-        $peso = self::PESOS[$this->tipo];
-        $idade = $anoReferencia - $this->ano;
+        return $this->explicar($anoReferencia)['peso'];
+    }
 
-        return $idade > self::ANOS_ATE_DEPRECIAR ? intdiv($peso, 2) : $peso;
+    /**
+     * Como o peso foi calculado (para mostrar o "porquê" do score).
+     *
+     * @return array{tipo: string, ano: int, peso_base: int, idade: int, depreciado: bool, peso: int}
+     */
+    public function explicar(int $anoReferencia): array
+    {
+        $pesoBase = self::PESOS[$this->tipo];
+        $idade = $anoReferencia - $this->ano;
+        $depreciado = $idade > self::ANOS_ATE_DEPRECIAR;
+
+        return [
+            'tipo' => $this->tipo,
+            'ano' => $this->ano,
+            'peso_base' => $pesoBase,
+            'idade' => $idade,
+            'depreciado' => $depreciado,
+            'peso' => $depreciado ? intdiv($pesoBase, 2) : $pesoBase,
+        ];
     }
 }

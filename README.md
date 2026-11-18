@@ -55,6 +55,45 @@ npm run dev -- --port 5180
 
 O Vite repassa `/api/*` para o Laravel (proxy em `vite.config.ts`), então não há CORS.
 
+## Análise de documentos por IA (Llama local)
+
+A Llama 3.2 3B (via **Ollama**) lê os documentos anexados e aponta os riscos; o sistema
+confere cada achado e calcula o score. Tudo roda em **fila**, em dois jobs:
+
+```
+POST /analises-ia ──► AnalisarDocumentosJob (Job 1)              ──► RegistrarResultadoAnaliseJob (Job 2)
+  202 na hora          para cada PDF: extrai texto → limpa →          troca os apontamentos de origem "ia",
+                       Llama → travas do código → grava achados       calcula o score com o domínio (explicado
+                       e o tempo de cada documento                    peso a peso), nível, recomendação e métricas
+```
+
+- **Travas do código** (o modelo sugere, o sistema decide): tipo válido, trecho citado precisa
+  existir **literalmente** no documento, não pode vir de certidão negativa, ano precisa aparecer
+  no texto. Achado descartado fica registrado com o motivo.
+- **Eliminatório:** sanção vigente que impede licitar/contratar ⇒ recomendação **reprovar**,
+  independente do score.
+- **Métricas guardadas:** duração total, espera na fila, tempo e tokens por documento, achados
+  válidos/descartados, modelo usado e a resposta bruta do modelo (auditoria).
+- **"Por que esse score?":** peso de cada apontamento, depreciação por idade, adicional de PEP,
+  score de cada sócio × participação, soma e teto.
+
+**Rodar** (além do backend e do frontend):
+```bash
+cd backend && composer worker            # executa os jobs da fila
+./ia/criar-modelo.sh                     # cria o modelo "due-diligence" no Ollama (uma vez)
+```
+
+**Modelo** `due-diligence` (`ia/Modelfile`): `llama3.2:3b` + regras + exemplos resolvidos.
+Avaliação nos documentos fictícios de `exemplos/fm-solucoes/`:
+
+| Modelo | Acertos | Precisão | Cobertura |
+|---|---|---|---|
+| `llama3.2:3b` sem preparo | 1 de 4 | 100% | 25% |
+| `due-diligence` (Modelfile) | **4 de 4** | **100%** | **100%** |
+
+Fine-tuning (LoRA) em `ia/treino/`: `gerar_dataset.py` (600 exemplos sintéticos),
+`instalar.sh`, `treinar.py` (QLoRA para GPU de 4 GB) e `criar-modelo-ft.sh`.
+
 ## Padrão de resposta da API
 
 Toda resposta segue o mesmo formato (`app/Http/Responses/ApiResponse.php`):

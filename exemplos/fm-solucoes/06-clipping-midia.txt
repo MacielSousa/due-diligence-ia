@@ -1,0 +1,25 @@
+DOCUMENTO FICTÍCIO - GERADO PARA TESTE DO SISTEMA DE DUE DILIGENCE - SEM VALOR LEGAL
+
+CLIPPING DE MÍDIA - PESQUISA REPUTACIONAL
+Modelo simulado - Período pesquisado: 01/2021 a 10/2026 - Fontes: veículos de imprensa fictícios
+======================================================================
+
+## Matéria 1 - Jornal Exemplo da Manhã (fictício), 14/09/2025
+Título: "Ex-secretário é investigado por direcionar contratos de tecnologia"
+Trecho: "O empresário Felipe Moraes Teste, que comandou a Secretaria de Administração de
+Cidade Exemplo até 2020, é alvo de investigação do Ministério Público por suspeita de
+usar a influência do antigo cargo para favorecer a FM Soluções Tecnologicas em contratos com
+a prefeitura."
+Classificação: mídia negativa - envolve sócio administrador e pessoa politicamente exposta.
+
+## Matéria 2 - Portal Tech Exemplo (fictício), 02/06/2024
+Título: "FM Soluções Tecnologicas lança plataforma de gestão escolar"
+Trecho: "A empresa apresentou sua nova plataforma em evento do setor e afirma atender 12
+municípios do interior paulista."
+Classificação: neutra/positiva.
+
+## Resumo
+1 notícia negativa relevante (2025), envolvendo o sócio Felipe Moraes Teste; 1 notícia
+neutra. Nenhuma notícia negativa sobre Mariana Teixeira Teste.
+
+DOCUMENTO FICTÍCIO - GERADO PARA TESTE DO SISTEMA DE DUE DILIGENCE - SEM VALOR LEGAL

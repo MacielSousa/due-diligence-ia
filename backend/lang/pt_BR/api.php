@@ -28,6 +28,11 @@ return [
         'criado' => 'Documento anexado com sucesso.',
         'excluido' => 'Documento removido.',
     ],
+    'analise' => [
+        'iniciada' => 'Análise iniciada: a IA vai ler :total documento(s). Acompanhe o progresso.',
+        'em_andamento' => 'Já existe uma análise em andamento para este terceiro.',
+        'sem_documentos' => 'Anexe pelo menos um documento antes de pedir a análise.',
+    ],
     'risco' => [
         'calculado' => 'Risco calculado.',
     ],

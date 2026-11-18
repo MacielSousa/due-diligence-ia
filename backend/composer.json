@@ -11,7 +11,8 @@
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "smalot/pdfparser": "^2.13"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -70,7 +71,8 @@
         ],
         "desafio": "php desafio.php",
         "test:api": "php artisan test --exclude-group=desafio",
-        "test:desafio": "php artisan test --group=desafio"
+        "test:desafio": "php artisan test --group=desafio",
+        "worker": "php artisan queue:work --tries=1 --timeout=1900"
     },
     "extra": {
         "laravel": {

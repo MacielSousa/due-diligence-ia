@@ -1,0 +1,106 @@
+{
+    "aviso": "DADOS FICTÍCIOS gerados para teste. Não representam pessoas, empresas ou órgãos reais.",
+    "terceiro": {
+        "id": 5,
+        "nome": "FM Soluções Tecnologicas",
+        "cnpj": "45.278.245/0001-13"
+    },
+    "socios": [
+        {
+            "nome": "Felipe Moraes Teste",
+            "cpf": "98765432100",
+            "pep": true,
+            "participacao": 50,
+            "apontamentos": [
+                {
+                    "tipo": "midia_negativa",
+                    "ano": 2025
+                }
+            ]
+        },
+        {
+            "nome": "Mariana Teixeira Teste",
+            "cpf": "24681357928",
+            "pep": false,
+            "participacao": 30,
+            "apontamentos": []
+        },
+        {
+            "nome": "Holding XPTO",
+            "terceiro_id": 3,
+            "participacao": 20
+        }
+    ],
+    "achados_esperados": [
+        {
+            "documento": "04-certidao-distribuicao-criminal",
+            "tipo": "processo_criminal",
+            "ano": 2026,
+            "eliminatorio": false,
+            "trecho": "Ação Penal nº 0001234-56.2026.8.26.9999"
+        },
+        {
+            "documento": "05-consulta-cadastro-sancoes",
+            "tipo": "sancao",
+            "ano": 2026,
+            "eliminatorio": true,
+            "trecho": "Impedimento de licitar e contratar com a Administração Pública"
+        },
+        {
+            "documento": "06-clipping-midia",
+            "tipo": "midia_negativa",
+            "ano": 2025,
+            "eliminatorio": false,
+            "trecho": "é alvo de investigação do Ministério Público"
+        },
+        {
+            "documento": "01-contrato-social",
+            "tipo": "pep",
+            "eliminatorio": false,
+            "trecho": "sendo, portanto, pessoa politicamente exposta (PEP)"
+        }
+    ],
+    "sem_achados": [
+        "02-certidao-negativa-debitos",
+        "03-certidao-negativa-trabalhista"
+    ],
+    "classificacao_esperada": "ELEVADO (sanção vigente de impedimento de licitar é eliminatória)",
+    "documentos": [
+        {
+            "arquivo": "01-contrato-social.pdf",
+            "texto": "01-contrato-social.txt",
+            "categoria": "contrato_social",
+            "titulo": "Contrato Social Consolidado"
+        },
+        {
+            "arquivo": "02-certidao-negativa-debitos.pdf",
+            "texto": "02-certidao-negativa-debitos.txt",
+            "categoria": "certidao_negativa",
+            "titulo": "Certidão Negativa de Débitos Tributários"
+        },
+        {
+            "arquivo": "03-certidao-negativa-trabalhista.pdf",
+            "texto": "03-certidao-negativa-trabalhista.txt",
+            "categoria": "certidao_negativa",
+            "titulo": "Certidão Negativa de Débitos Trabalhistas"
+        },
+        {
+            "arquivo": "04-certidao-distribuicao-criminal.pdf",
+            "texto": "04-certidao-distribuicao-criminal.txt",
+            "categoria": "outro",
+            "titulo": "Certidão de Distribuição de Ações Criminais"
+        },
+        {
+            "arquivo": "05-consulta-cadastro-sancoes.pdf",
+            "texto": "05-consulta-cadastro-sancoes.txt",
+            "categoria": "outro",
+            "titulo": "Consulta a Cadastro de Empresas Sancionadas"
+        },
+        {
+            "arquivo": "06-clipping-midia.pdf",
+            "texto": "06-clipping-midia.txt",
+            "categoria": "outro",
+            "titulo": "Clipping de Mídia - Pesquisa Reputacional"
+        }
+    ]
+}

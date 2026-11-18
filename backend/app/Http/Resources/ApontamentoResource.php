@@ -13,6 +13,9 @@ class ApontamentoResource extends JsonResource
             'id' => $this->id,
             'tipo' => $this->tipo,
             'ano' => $this->ano,
+            'origem' => $this->origem ?? 'manual',
+            'trecho' => $this->trecho,
+            'anexo_id' => $this->anexo_id,
         ];
     }
 }

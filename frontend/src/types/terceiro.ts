@@ -9,6 +9,9 @@ export interface Apontamento {
   id: number
   tipo: TipoApontamento
   ano: number
+  origem: 'manual' | 'ia'
+  trecho: string | null // evidência literal (quando veio da IA)
+  anexo_id: number | null
 }
 
 export interface SocioResumo {

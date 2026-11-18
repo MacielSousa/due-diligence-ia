@@ -11,7 +11,7 @@ class Apontamento extends Model
 
     protected $table = 'apontamentos';
 
-    protected $fillable = ['tipo', 'ano'];
+    protected $fillable = ['tipo', 'ano', 'origem', 'trecho', 'anexo_id', 'analise_ia_id'];
 
     protected function casts(): array
     {

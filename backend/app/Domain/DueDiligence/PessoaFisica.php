@@ -26,10 +26,17 @@ class PessoaFisica extends Terceiro
         return Documento::cpfValido($documento);
     }
 
-    public function calcularRisco(int $anoReferencia, array $cadeia = []): float
+    public function explicarRisco(int $anoReferencia, array $cadeia = []): array
     {
-        $score = $this->riscoProprio($anoReferencia) + ($this->pep ? self::ADICIONAL_PEP : 0);
+        $riscoProprio = $this->riscoProprio($anoReferencia);
+        $adicionalPep = $this->pep ? self::ADICIONAL_PEP : 0;
 
-        return $this->limitar($score);
+        return $this->resultado('pf', [
+            'apontamentos' => $this->explicarApontamentos($anoReferencia),
+            'risco_proprio' => $riscoProprio,
+            'pep' => $this->pep,
+            'adicional_pep' => $adicionalPep,
+            'socios' => [],
+        ], $riscoProprio + $adicionalPep);
     }
 }

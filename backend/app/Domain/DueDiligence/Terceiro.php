@@ -32,9 +32,41 @@ abstract class Terceiro
     abstract protected function documentoValido(string $documento): bool;
 
     /**
+     * Explica o score peso a peso. É a fonte única do cálculo: calcularRisco() usa o 'score' daqui.
+     *
+     * @param  string[]  $cadeia  documentos já visitados no caminho societário (detecção de ciclo)
+     * @return array<string, mixed>
+     */
+    abstract public function explicarRisco(int $anoReferencia, array $cadeia = []): array;
+
+    /**
      * @param  string[]  $cadeia  documentos já visitados no caminho societário (detecção de ciclo)
      */
-    abstract public function calcularRisco(int $anoReferencia, array $cadeia = []): float;
+    public function calcularRisco(int $anoReferencia, array $cadeia = []): float
+    {
+        return $this->explicarRisco($anoReferencia, $cadeia)['score'];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    protected function explicarApontamentos(int $anoReferencia): array
+    {
+        return array_map(fn (Apontamento $a) => $a->explicar($anoReferencia), $this->apontamentos);
+    }
+
+    /** Monta o resultado comum (soma -> arredonda -> aplica o teto de 100). */
+    protected function resultado(string $tipo, array $detalhes, float $soma): array
+    {
+        $score = $this->limitar($soma);
+
+        return [
+            'nome' => $this->nome,
+            'tipo' => $tipo,
+            ...$detalhes,
+            'soma' => round($soma, 1),
+            'teto_aplicado' => round($soma, 1) > self::RISCO_MAXIMO,
+            'score' => $score,
+        ];
+    }
 
     public function adicionarApontamento(Apontamento $apontamento): void
     {

@@ -20,3 +20,9 @@ dist/
 
 # configuração local do Claude Code
 .claude/
+
+# IA: arquivos gerados (recriados pelos scripts)
+ia/treino/dados/
+ia/treino/saida/
+exemplos/**/resultado-*.json
+__pycache__/

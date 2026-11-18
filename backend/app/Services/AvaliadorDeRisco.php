@@ -21,4 +21,18 @@ class AvaliadorDeRisco
             'nivel' => $linha['nivel'],
         ];
     }
+
+    /**
+     * Score com a explicação peso a peso (apontamentos, PEP, sócios × participação, teto).
+     *
+     * @return array<string, mixed>
+     */
+    public function explicar(Terceiro $terceiro, int $ano): array
+    {
+        $explicacao = (new MontadorDeTerceiros())->montar($terceiro)->explicarRisco($ano);
+        $explicacao['nivel'] = AnalisadorDeRisco::classificar($explicacao['score']);
+        $explicacao['faixas'] = ['BAIXO' => '0 a 24', 'MEDIO' => '25 a 49', 'ALTO' => '50 a 74', 'CRITICO' => '75 a 100'];
+
+        return $explicacao;
+    }
 }
