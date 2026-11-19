@@ -10,7 +10,7 @@ export default defineConfig({
   server: {
     // /api/* é repassado para o Laravel (php artisan serve) -> sem problema de CORS
     proxy: {
-      '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+      '/api': { target: process.env.API_PROXY_TARGET ?? 'http://127.0.0.1:8000', changeOrigin: true },
     },
   },
 })
