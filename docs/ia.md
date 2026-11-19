@@ -29,7 +29,7 @@ com regras fixas e explicáveis.
 | Arquitetura | Transformer decoder: 28 camadas, dimensão 3.072, 24 cabeças de atenção (8 de chave/valor — *GQA*), vocabulário de 128.256 tokens |
 | Contexto máximo do modelo | 131.072 tokens (128k) — **usamos 8.192** |
 | Formato / quantização | GGUF **Q4_K_M** (pesos em ~4 bits) → arquivo de **2,02 GB** (em 16 bits seriam ~6,4 GB) |
-| Servidor | **Ollama 0.6.8** em container Docker (`api-ollama-1`), API HTTP em `127.0.0.1:11434` |
+| Servidor | **Ollama 0.6.8** em container Docker (serviço `ollama` do [compose.yaml](../backend/compose.yaml)), API HTTP em `127.0.0.1:11434` (na rede interna: `http://ollama:11434`) |
 | Modelo usado pela PoC | **`due-diligence`** = `llama3.2:3b` + instruções + exemplos ([ia/Modelfile](../ia/Modelfile)) |
 | Idiomas | 8 oficiais, incluindo **português** |
 | Licença | Llama 3.2 Community License |
@@ -170,12 +170,12 @@ flowchart TB
 
     subgraph BACK["Backend — Laravel 12"]
         API["API REST<br/>AnaliseIaController"]
-        FILA[("Fila<br/>tabela jobs")]
-        WORKER["Worker<br/>php artisan queue:work"]
+        FILA[("Fila<br/>Redis")]
+        WORKER["Worker (container queue)<br/>php artisan queue:work redis"]
         J1["Job 1<br/>AnalisarDocumentosJob"]
         J2["Job 2<br/>RegistrarResultadoAnaliseJob"]
         DOM["Domínio PHP puro<br/>app/Domain/DueDiligence<br/>score explicado"]
-        DB[("SQLite<br/>terceiros · anexos · apontamentos<br/>analises_ia · analise_ia_documentos")]
+        DB[("MySQL<br/>terceiros · anexos · apontamentos<br/>analises_ia · analise_ia_documentos")]
         DISCO[("storage/app/private<br/>PDFs anexados")]
     end
 
@@ -397,15 +397,15 @@ O tempo cresce com os **tokens de saída**: certidão negativa (resposta `[]`) l
 ## 11. Como rodar e operar
 
 ```bash
-./ia/criar-modelo.sh                 # 1x: cria o modelo due-diligence no Ollama
-cd backend && composer dev           # API em :8000
-cd backend && composer worker        # executa os jobs da fila (necessário para a IA)
-cd frontend && npm run dev -- --port 5180
+./subir.sh                           # sobe tudo: API, worker, Vue, MySQL, Redis e Ollama
+                                     # (e cria o modelo due-diligence se ainda não existir)
+cd backend && ./vendor/bin/sail logs -f queue   # acompanha a análise no worker
+./ia/criar-modelo.sh                 # recria o modelo depois de editar o ia/Modelfile
 ```
 
 | Variável (`backend/.env`) | Padrão | Para quê |
 |---|---|---|
-| `OLLAMA_URL` | `http://127.0.0.1:11434` | onde está o Ollama |
+| `OLLAMA_URL` | `http://ollama:11434` | onde está o Ollama (nome do container) |
 | `OLLAMA_MODEL` | `due-diligence` | trocar por `due-diligence-ft` depois do fine-tuning |
 | `OLLAMA_TIMEOUT` | `300` | segundos por documento |
 | `IA_MAX_CARACTERES` | `12000` | corte do texto enviado |
@@ -415,7 +415,7 @@ cd frontend && npm run dev -- --port 5180
 cd exemplos/fm-solucoes && php analisar-com-llama.php due-diligence
 ```
 
-**Testes** (Ollama simulado com `Http::fake`): `cd backend && php artisan test --filter=AnaliseIa`.
+**Testes** (Ollama simulado com `Http::fake`): `cd backend && ./vendor/bin/sail artisan test --filter=AnaliseIa`.
 
 ## 12. Limitações e próximos passos
 

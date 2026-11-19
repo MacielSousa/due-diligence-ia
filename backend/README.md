@@ -7,59 +7,76 @@ societário, documentos anexados, cálculo de risco e **análise de documentos p
 |---|---|
 | Linguagem | PHP 8.2+ (testado no 8.3) |
 | Framework | Laravel 12 |
-| Banco | SQLite (`database/database.sqlite`) |
-| Fila | driver `database` (tabela `jobs`) |
+| Banco | MySQL 8.4 (container `mysql`, volume `sail-mysql`) |
+| Fila | Redis (container `redis`) + worker no container `queue` |
+| Ambiente | Laravel Sail — [compose.yaml](compose.yaml) |
 | Arquivos | disco `local` → `storage/app/private` |
 | IA | Ollama (Llama 3.2 3B) via HTTP — ver [docs/ia.md](../docs/ia.md) |
-| Testes | PHPUnit (SQLite em memória) |
+| Testes | PHPUnit (SQLite em memória — não toca no MySQL) |
 
 ---
 
 ## 1. Como subir
 
-### Pré-requisitos
-- PHP 8.2+ com as extensões `pdo_sqlite`, `mbstring`, `fileinfo`
-- Composer 2
-- Para a análise por IA: Ollama rodando com o modelo `due-diligence` (`../ia/criar-modelo.sh`)
+Tudo roda em containers. Da **raiz do projeto**:
 
-### Primeira vez
 ```bash
-cd backend
-composer setup
+./subir.sh
 ```
-O `composer setup` faz, em ordem: `composer install` → copia `.env.example` para `.env` →
-gera a `APP_KEY` → cria `database/database.sqlite` → `php artisan migrate:fresh --seed`
-(cria as tabelas e os dados de exemplo).
 
-### Dia a dia (2 terminais)
-```bash
-composer dev      # API em http://localhost:8000  (php artisan serve)
-composer worker   # executa os jobs da fila — necessário para a análise por IA
-```
+Ele instala as dependências, cria o `.env`, sobe os containers (API, worker, Vue, MySQL, Redis e
+Ollama), aplica as migrations, popula o banco se estiver vazio e cria o modelo de IA. Pode rodar
+quantas vezes quiser: o que já está pronto é pulado. Detalhes de cada passo, portas e problemas
+comuns no [README principal](../README.md#subir-tudo--um-comando).
+
+### Rodando comandos dentro dos containers
+
+Com os containers de pé, use o `sail` (de dentro de `backend/`) no lugar de `php`/`composer`:
 
 | Comando | O que faz |
 |---|---|
-| `composer setup` | instala e prepara tudo do zero (apaga o banco!) |
-| `composer dev` | sobe a API |
-| `composer worker` | `php artisan queue:work --tries=1 --timeout=1900` |
-| `composer test` | todos os testes |
-| `composer test:api` | testes da API (sem os de aceitação do desafio) |
-| `composer test:desafio` | 7 testes de aceitação do cálculo de risco |
-| `composer desafio` | roda o `desafio.php` (script original do desafio) |
+| `./vendor/bin/sail up -d` / `down` | sobe / para os containers |
+| `./vendor/bin/sail ps` | estado dos containers |
+| `./vendor/bin/sail logs -f queue` | acompanha o worker da fila |
+| `./vendor/bin/sail artisan <comando>` | qualquer comando artisan |
+| `./vendor/bin/sail composer <comando>` | composer dentro do container |
+| `./vendor/bin/sail mysql` | console do MySQL |
+| `./vendor/bin/sail artisan test` | todos os testes |
+| `./vendor/bin/sail artisan test --exclude-group=desafio` | testes da API (sem os de aceitação do desafio) |
+| `./vendor/bin/sail artisan test --group=desafio` | 7 testes de aceitação do cálculo de risco |
+| `./vendor/bin/sail php desafio.php` | roda o `desafio.php` (script original do desafio) |
+| `./vendor/bin/sail artisan db:importar-sqlite` | copia os dados de um `database/database.sqlite` antigo para o MySQL (banco vazio) |
+
+> O worker (`queue`) mantém o código carregado: depois de alterar um job, rode
+> `./vendor/bin/sail restart queue`.
+
+### Acessar o banco
+
+De um cliente (DBeaver, TablePlus, extensão do VS Code): host `localhost`, porta `3307`, banco
+`due_diligence`, usuário `sail`, senha `password`. Os dados ficam no volume `sail-mysql` e
+sobrevivem a `sail down`; só `sail down -v` apaga.
 
 ### Variáveis do `.env` mais importantes
 | Variável | Padrão | Para quê |
 |---|---|---|
 | `APP_LOCALE` | `pt_BR` | idioma padrão das mensagens (o `Accept-Language` sobrescreve) |
-| `DB_CONNECTION` | `sqlite` | banco |
-| `QUEUE_CONNECTION` | `database` | fila dos jobs (`sync` executa na hora, sem worker) |
-| `OLLAMA_URL` | `http://127.0.0.1:11434` | onde está o Ollama |
+| `DB_CONNECTION` / `DB_HOST` | `mysql` / `mysql` | banco (o host é o nome do container) |
+| `DB_DATABASE` / `DB_USERNAME` / `DB_PASSWORD` | `due_diligence` / `sail` / `password` | credenciais do MySQL |
+| `QUEUE_CONNECTION` | `redis` | fila dos jobs (`sync` executa na hora, sem worker) |
+| `REDIS_QUEUE_RETRY_AFTER` | `2000` | tem que ser maior que o `--timeout` do worker (1900 s), senão a análise é repetida |
+| `APP_PORT` / `WEB_PORT` | `8000` / `5180` | portas da API e do frontend no host |
+| `FORWARD_DB_PORT` / `FORWARD_REDIS_PORT` / `FORWARD_OLLAMA_PORT` | `3307` / `6380` / `11434` | portas do MySQL, Redis e Ollama no host |
+| `OLLAMA_URL` | `http://ollama:11434` | onde está o Ollama (nome do container) |
 | `OLLAMA_MODEL` | `due-diligence` | modelo usado na análise |
 | `OLLAMA_TIMEOUT` | `300` | segundos por documento |
 
 ---
 
 ## 2. Banco de dados e migrations
+
+> **Nos exemplos deste guia, `php artisan ...` roda dentro do container:** use
+> `./vendor/bin/sail artisan ...` (ex.: `./vendor/bin/sail artisan migrate`). O PHP da máquina não
+> tem acesso ao MySQL, que só existe na rede do Docker.
 
 ```bash
 php artisan migrate                 # aplica as migrations pendentes
@@ -238,7 +255,7 @@ sequenceDiagram
 
 Comandos da fila:
 ```bash
-php artisan queue:work --tries=1 --timeout=1900   # processa (o composer worker faz isso)
+php artisan queue:work redis --tries=1 --timeout=1900   # processa (o container queue faz isso)
 php artisan queue:listen                          # igual, mas recarrega o código a cada job (bom em dev)
 php artisan queue:failed                          # lista jobs que falharam
 php artisan queue:retry all                       # tenta de novo os que falharam

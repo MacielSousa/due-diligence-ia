@@ -3,7 +3,7 @@
 # Uso: ./ia/criar-modelo.sh [container-ollama]
 set -euo pipefail
 
-CONTAINER="${1:-api-ollama-1}"
+CONTAINER="${1:-backend-ollama-1}"
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 if command -v ollama >/dev/null 2>&1; then

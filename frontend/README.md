@@ -18,14 +18,22 @@ societário, documentos anexados e a **análise por IA** com progresso ao vivo.
 
 ## 1. Como subir
 
-### Pré-requisitos
-- Node 18+ e npm
-- O backend rodando em `http://127.0.0.1:8000` (ver [../backend/README.md](../backend/README.md))
+O frontend roda no container `web`, que o `./subir.sh` (na raiz) sobe junto com o resto:
+**http://localhost:5180**. O container faz `npm install` e `npm run dev` sozinho; as alterações
+nos arquivos aparecem na hora (recarga automática).
+
+```bash
+cd backend && ./vendor/bin/sail logs -f web   # logs do Vite
+cd backend && ./vendor/bin/sail restart web   # reinicia (ex.: depois de mudar o vite.config.ts)
+```
+
+Para rodar **fora do container** (precisa de Node 18+ na máquina; pare antes o container `web`
+com `./vendor/bin/sail stop web`, senão a porta 5180 fica ocupada):
 
 ```bash
 cd frontend
-npm install                     # 1ª vez
-npm run dev -- --port 5180      # http://localhost:5180
+npm install
+npm run dev -- --port 5180      # o proxy /api vai para http://127.0.0.1:8000
 ```
 
 | Comando | O que faz |
@@ -36,7 +44,8 @@ npm run dev -- --port 5180      # http://localhost:5180
 | `npm run preview` | serve o `dist/` para conferir o build |
 
 **Não há CORS:** o Vite repassa tudo que começa com `/api` para o Laravel
-(proxy em [vite.config.ts](vite.config.ts)). Para apontar para outro backend, crie um `.env` com
+(proxy em [vite.config.ts](vite.config.ts); o destino vem de `API_PROXY_TARGET`, que no container é
+`http://laravel.test`). Para apontar para outro backend, crie um `.env` com
 `VITE_API_URL=https://outro-servidor/api`.
 
 ---
