@@ -2,53 +2,24 @@
 
 namespace App\Services\Ia;
 
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Http;
-
 /**
- * Conversa com o Ollama. As instruções e exemplos ficam no modelo (ia/Modelfile);
- * aqui só mandamos o texto do documento e pedimos a resposta em JSON.
+ * Contrato (porta) de qualquer modelo de linguagem que lê um documento e devolve achados.
+ *
+ * Quem usa (AnalisarDocumentosJob) depende só desta interface; qual LLM atende é decidido
+ * no AppServiceProvider pela config ia.driver. Trocar o Ollama por outro provedor é criar
+ * uma nova implementação e registrá-la lá, sem mexer no job (SOLID: D e O; padrão Strategy).
  */
-class ClienteLlm
+interface ClienteLlm
 {
-    public function modelo(): string
-    {
-        return config('ia.modelo');
-    }
+    /** Nome do modelo, gravado na análise para auditoria. */
+    public function modelo(): string;
 
     /**
+     * Lê o texto de um documento e devolve os achados em estado bruto (o ValidadorDeAchados confere depois).
+     *
      * @return array{achados: array<int, mixed>, bruto: string, tokens_entrada: ?int, tokens_saida: ?int}
+     *
+     * @throws IaIndisponivelException quando o provedor não responde ou responde com erro
      */
-    public function analisar(string $texto): array
-    {
-        $texto = mb_substr($texto, 0, config('ia.max_caracteres'));
-
-        try {
-            $resposta = Http::timeout(config('ia.timeout'))
-                ->acceptJson()
-                ->post(rtrim(config('ia.url'), '/').'/api/generate', [
-                    'model' => $this->modelo(),
-                    'prompt' => "DOCUMENTO:\n".$texto,
-                    'stream' => false,
-                    'format' => 'json',
-                    'options' => ['temperature' => 0, 'num_ctx' => 8192],
-                ]);
-        } catch (ConnectionException $e) {
-            throw new IaIndisponivelException('A IA (Ollama) não respondeu em '.config('ia.url').'.', previous: $e);
-        }
-
-        if ($resposta->failed()) {
-            throw new IaIndisponivelException('A IA respondeu com erro HTTP '.$resposta->status().': '.($resposta->json('error') ?? 'sem detalhes'));
-        }
-
-        $bruto = (string) $resposta->json('response', '');
-        $json = json_decode($bruto, true);
-
-        return [
-            'achados' => is_array($json['achados'] ?? null) ? $json['achados'] : [],
-            'bruto' => $bruto,
-            'tokens_entrada' => $resposta->json('prompt_eval_count'),
-            'tokens_saida' => $resposta->json('eval_count'),
-        ];
-    }
+    public function analisar(string $texto): array;
 }

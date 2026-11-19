@@ -7,6 +7,7 @@ use App\Http\Responses\ApiResponse;
 use App\Http\Responses\ErrorCode;
 use App\Models\Terceiro;
 use App\Services\AvaliadorDeRisco;
+use App\Services\MontadorDeTerceiros;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -43,8 +44,9 @@ class RiscoController extends Controller
     {
         $ano = $this->ano($request);
         $linhas = [];
+        $montador = MontadorDeTerceiros::comTodos(); // 3 consultas para o relatório inteiro (sem N+1)
 
-        foreach (Terceiro::orderBy('nome')->get() as $terceiro) {
+        foreach ($montador->carregados() as $terceiro) {
             $linha = [
                 'id' => $terceiro->id,
                 'nome' => $terceiro->nome,
@@ -55,7 +57,7 @@ class RiscoController extends Controller
             ];
 
             try {
-                $linha = [...$linha, ...$avaliador->avaliar($terceiro, $ano)];
+                $linha = [...$linha, ...$avaliador->avaliar($terceiro, $ano, $montador)];
             } catch (\LogicException $e) {
                 $linha['erro'] = $e->getMessage(); // um terceiro com problema não derruba o relatório
             } catch (\Error $e) {

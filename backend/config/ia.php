@@ -2,6 +2,9 @@
 
 // Configuração da análise de documentos por IA (Llama local via Ollama).
 return [
+    // qual implementação do App\Services\Ia\ClienteLlm usar (ver AppServiceProvider)
+    'driver' => env('IA_DRIVER', 'ollama'),
+
     'url' => env('OLLAMA_URL', 'http://127.0.0.1:11434'),
 
     // modelo especializado criado a partir de ia/Modelfile (ou due-diligence-ft, o treinado com LoRA)

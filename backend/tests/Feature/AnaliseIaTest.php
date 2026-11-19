@@ -2,15 +2,19 @@
 
 namespace Tests\Feature;
 
-use App\Models\Anexo;
+use App\Jobs\AnalisarDocumentosJob;
 use App\Models\AnaliseIa;
+use App\Models\Anexo;
 use App\Models\Terceiro;
+use App\Services\Ia\ClienteLlm;
+use App\Services\Ia\OllamaClienteLlm;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 use Tests\TestCase;
 
 /**
@@ -182,6 +186,49 @@ class AnaliseIaTest extends TestCase
             ->assertStatus(409)
             ->assertJsonPath('code', 'conflict');
 
-        Queue::assertPushed(\App\Jobs\AnalisarDocumentosJob::class, 1);
+        Queue::assertPushed(AnalisarDocumentosJob::class, 1);
+    }
+
+    /**
+     * Inversão de dependência: o job depende da interface ClienteLlm, não do Ollama.
+     * Qualquer implementação registrada no container é usada — sem HTTP nenhum.
+     */
+    public function test_job_usa_qualquer_implementacao_de_cliente_llm(): void
+    {
+        Http::preventStrayRequests(); // prova que o Ollama não é chamado
+        $this->app->instance(ClienteLlm::class, new class implements ClienteLlm
+        {
+            public function modelo(): string
+            {
+                return 'llm-de-teste';
+            }
+
+            public function analisar(string $texto): array
+            {
+                $achados = str_contains($texto, 'sanção VIGENTE')
+                    ? [['tipo' => 'sancao', 'ano' => 2026, 'envolvido' => 'FM', 'eliminatorio' => true,
+                        'trecho' => 'Tipo de sanção: Impedimento de licitar e contratar com a Administração Pública']]
+                    : [];
+
+                return ['achados' => $achados, 'bruto' => json_encode($achados), 'tokens_entrada' => null, 'tokens_saida' => null];
+            }
+        });
+        $this->anexar('consulta-sancoes.pdf');
+
+        $this->postJson("/api/terceiros/{$this->empresa->id}/analises-ia", ['ano' => 2026])->assertStatus(202);
+
+        $analise = AnaliseIa::latest('id')->first();
+        $this->assertSame(AnaliseIa::CONCLUIDA, $analise->status);
+        $this->assertSame('llm-de-teste', $analise->modelo);
+        $this->assertSame('reprovar', $analise->recomendacao);
+    }
+
+    public function test_driver_padrao_e_o_ollama_e_driver_desconhecido_falha_cedo(): void
+    {
+        $this->assertInstanceOf(OllamaClienteLlm::class, app(ClienteLlm::class));
+
+        config(['ia.driver' => 'inexistente']);
+        $this->expectException(InvalidArgumentException::class);
+        app(ClienteLlm::class);
     }
 }

@@ -8,11 +8,14 @@ use App\Models\Terceiro;
 /** Ponte entre a API e o AnalisadorDeRisco do desafio. */
 class AvaliadorDeRisco
 {
-    /** @return array{score: float, nivel: string} */
-    public function avaliar(Terceiro $terceiro, int $ano): array
+    /**
+     * @param  MontadorDeTerceiros|null  $montador  reaproveitado entre várias chamadas (ex.: relatório) para não repetir consultas
+     * @return array{score: float, nivel: string}
+     */
+    public function avaliar(Terceiro $terceiro, int $ano, ?MontadorDeTerceiros $montador = null): array
     {
         $analisador = new AnalisadorDeRisco($ano);
-        $analisador->adicionar((new MontadorDeTerceiros())->montar($terceiro));
+        $analisador->adicionar(($montador ?? new MontadorDeTerceiros)->montar($terceiro));
 
         $linha = $analisador->relatorio()[0];
 
@@ -29,7 +32,7 @@ class AvaliadorDeRisco
      */
     public function explicar(Terceiro $terceiro, int $ano): array
     {
-        $explicacao = (new MontadorDeTerceiros())->montar($terceiro)->explicarRisco($ano);
+        $explicacao = (new MontadorDeTerceiros)->montar($terceiro)->explicarRisco($ano);
         $explicacao['nivel'] = AnalisadorDeRisco::classificar($explicacao['score']);
         $explicacao['faixas'] = ['BAIXO' => '0 a 24', 'MEDIO' => '25 a 49', 'ALTO' => '50 a 74', 'CRITICO' => '75 a 100'];
 
